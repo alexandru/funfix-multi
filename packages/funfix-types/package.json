@@ -1,0 +1,20 @@
+{
+  "name": "funfix-types",
+  "description": "Sub-package of Funfix defining type classes inspired by Haskell's standard library and by Typelevel Cats",
+  "version": "4.0.0",
+  "main": "dist/umd.js",
+  "module": "dist/index.js",
+  "typings": "dist/types/index.d.ts",
+  "scripts": {
+    "lint": "npm run bin-flow -- check && npm run bin-tslint -- --type-check --project tsconfig.json -e **/node_modules/** -e **/dist/** -t codeFrame src/**/*.ts",
+    "prebuild": "../../node_modules/.bin/rimraf dist",
+    "build": "npm run bin-tsc && npm run bin-rollup -- -c",
+    "bin-tsc": "../../node_modules/.bin/tsc",
+    "bin-rollup": "../../node_modules/.bin/rollup",
+    "bin-flow": "../../node_modules/.bin/flow",
+    "bin-tslint": "../../node_modules/.bin/tslint"
+  },
+  "dependencies": {
+    "funfix-core": "4.0.0"
+  }
+}
