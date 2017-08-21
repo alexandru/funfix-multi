@@ -16,27 +16,6 @@
  */
 
 /**
- * Exposes {@link DynamicRef} for dynamically bound references.
- *
- * À la carte imports work, assuming an ECMAScript 2015 compatible environment,
- * including ES2015 modules and `import` syntax:
- *
- * ```typescript
- * import { Ref } from "funfix/dist/exec/ref"
- * // ... or ...
- * import { Ref } from "funfix"
- * ```
- *
- * In absence of ES2015 compatibility, you can still rely on working with the
- * packaged (`pkg.main`) universal distribution that works within all browsers
- * and environments.
- *
- * @module exec/ref
- */
-
-/***/
-
-/**
  * `DynamicRef` provides a binding mechanism where the current value is
  * found through dynamic scope, but where access to the variable itself is
  * resolved through static scope.

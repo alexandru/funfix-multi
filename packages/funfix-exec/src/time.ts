@@ -15,32 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Module exporting data types for expressing durations.
- *
- * See:
- *
- * - {@link TimeUnit}
- * - {@link Duration}
- *
- * À la carte imports work, assuming an ECMAScript 2015 compatible environment,
- * including ES2015 modules and `import` syntax:
- *
- * ```typescript
- * import { Duration } from "funfix/dist/exec/time"
- * // ... or ...
- * import { Duration } from "funfix"
- * ```
- *
- * In absence of ES2015 compatibility, you can still rely on working with the
- * packaged (`pkg.main`) universal distribution that works within all browsers
- * and environments.
- *
- * @module exec/time
- */
-
-/***/
-
 import { IEquals, IllegalArgumentError } from "funfix-core"
 
 /**

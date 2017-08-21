@@ -15,26 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Exposes {@link Future}, a lawful promise implementation.
- *
- * À la carte imports work, assuming an ECMAScript 2015 compatible environment,
- * including ES2015 modules and `import` syntax:
- *
- * ```typescript
- * import { Future } from "funfix/dist/exec/future"
- * // ... or ...
- * import { Future } from "funfix"
- * ```
- *
- * In absence of ES2015 compatibility, you can still rely on working with the
- * packaged (`pkg.main`) universal distribution that works within all browsers
- * and environments.
- *
- * @module exec/future
- */
-
-/***/
 import {
   Try, Success, Failure, Option, Some, None, Either, Left, Right,
   IllegalStateError, IllegalArgumentError, TimeoutError
@@ -304,7 +284,7 @@ export abstract class Future<A> implements IPromiseLike<A>, ICancelable {
 
   /**
    * Exposes underlying errors by lifting both successful and failed
-   * results into an {@link Either} value.
+   * results into an `Either` value.
    *
    * Given that errors are short-circuiting the processing of {@link flatMap}
    * chains, this method is useful for exposing errors such that you can
@@ -460,7 +440,7 @@ export abstract class Future<A> implements IPromiseLike<A>, ICancelable {
   /**
    * Returns a future that mirrors the source in case the result of the source
    * is signaled within the required `after` duration, otherwise it
-   * fails with a {@link TimeoutError}, cancelling the source.
+   * fails with a `TimeoutError`, cancelling the source.
    *
    * ```typescript
    * const fa = Future.of(() => 1).delayResult(10000)

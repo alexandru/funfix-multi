@@ -15,29 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Exposes the {@link Cancelable} interface for dealing with the disposal
- * of resources, along with `Cancelable` implementations for composing
- * cancelable actions.
- *
- * À la carte imports work, assuming an ECMAScript 2015 compatible environment,
- * including ES2015 modules and `import` syntax:
- *
- * ```typescript
- * import { Cancelable } from "funfix/dist/exec/cancelable"
- * // ... or ...
- * import { Cancelable } from "funfix"
- * ```
- *
- * In absence of ES2015 compatibility, you can still rely on working with the
- * packaged (`pkg.main`) universal distribution that works within all browsers
- * and environments.
- *
- * @module exec/cancelable
- */
-
-/***/
-
 import { CompositeError, IllegalStateError } from "funfix-core"
 
 /**

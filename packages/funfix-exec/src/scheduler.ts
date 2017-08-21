@@ -15,29 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Provides a {@link Scheduler} data type, capable of scheduling units of work
- * for asynchronous execution, as an alternative to Javascript's `setTimeout`,
- * `setInterval` or other globally available commands.
- *
- * À la carte imports work, assuming an ECMAScript 2015 compatible environment,
- * including ES2015 modules and `import` syntax:
- *
- * ```typescript
- * import { Scheduler } from "funfix/dist/exec/scheduler"
- * // ... or ...
- * import { Scheduler } from "funfix"
- * ```
- *
- * In absence of ES2015 compatibility, you can still rely on working with the
- * packaged (`pkg.main`) universal distribution that works within all browsers
- * and environments.
- *
- * @module exec/scheduler
- */
-
-/***/
-
 import { Duration } from "./time"
 import { ICancelable, Cancelable, IAssignCancelable, MultiAssignCancelable } from "./cancelable"
 import { DynamicRef } from "./ref"
