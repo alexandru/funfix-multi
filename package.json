@@ -1,4 +1,10 @@
 {
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/funfix/funfix.git"
+  },
+  "author": "Alexandru Nedelcu <noreply@alexn.org>",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@types/jest": "^20.0.0",
     "@types/node": "^8.0.0",

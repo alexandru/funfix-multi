@@ -29,6 +29,7 @@ const filesToLink = [
 
 for (const p of fs.readdirSync(rootDir)) {
   const dir = path.join(rootDir, p)
+  if (!fs.lstatSync(dir).isDirectory()) continue
 
   for (const file of filesToLink) {
     const target = path.join(dir, file)

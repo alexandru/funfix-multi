@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-// Exporting everything
-export * from "./std"
-export * from "./errors"
-export * from "./disjunctions"
+/* @flow */
+
+declare export * from "./core";
+declare export * from "./exec";

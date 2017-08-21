@@ -15,32 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Exposes data types for expression disjunctions:
- *
- * - {@link Either}: data type for expressing results with two possible
- *   outcome types (a disjoint union)
- * - {@link Option}: data type for expressing optional values
- * - {@link Try}: data type for representing the result of computations
- *   that may result in either success or failure
- *
- * À la carte imports work, assuming an ECMAScript 2015 compatible environment,
- * including ES2015 modules and `import` syntax:
- *
- * ```typescript
- * import { Either } from "funfix/dist/core/disjunction"
- * // ... or ...
- * import { Either } from "funfix"
- * ```
- *
- * In absence of ES2015 compatibility, you can still rely on working with the
- * packaged (`pkg.main`) universal distribution that works within all browsers
- * and environments.
- *
- * @module core/disjunction
- */
-
-/***/
 import * as std from "./std"
 import { NoSuchElementError } from "./errors"
 
