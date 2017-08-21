@@ -523,7 +523,7 @@ export class Either<L, R> implements std.IEquals<Either<L, R>> {
    * Based on Phil Freeman's
    * [Stack Safety for Free]{@link http://functorial.com/stack-safety-for-free/index.pdf}.
    *
-   * Described in {@link FlatMap.tailRecM}.
+   * Described in `FlatMap.tailRecM`.
    */
   static tailRecM<L, A, B>(a: A, f: (a: A) => Either<L, Either<A, B>>): Either<L, B> {
     let cursor = a
@@ -1038,7 +1038,7 @@ export class Option<A> implements std.IEquals<Option<A>> {
    * Based on Phil Freeman's
    * [Stack Safety for Free]{@link http://functorial.com/stack-safety-for-free/index.pdf}.
    *
-   * Described in {@link FlatMap.tailRecM}.
+   * Described in `FlatMap.tailRecM`.
    */
   static tailRecM<A, B>(a: A, f: (a: A) => Option<Either<A, B>>): Option<B> {
     let cursor = a
@@ -1521,8 +1521,9 @@ export class Try<A> implements std.IEquals<Try<A>> {
    *
    * This operation is the `Applicative.map2`.
    */
-  static map2<A1,A2,R>(fa1: Try<A1>, fa2: Try<A2>,
-                       f: (a1: A1, a2: A2) => R): Try<R> {
+  static map2<A1,A2,R>(
+    fa1: Try<A1>, fa2: Try<A2>,
+    f: (a1: A1, a2: A2) => R): Try<R> {
 
     if (fa1.isFailure()) return ((fa1 as any) as Try<R>)
     if (fa2.isFailure()) return ((fa2 as any) as Try<R>)
@@ -1738,7 +1739,7 @@ export class Try<A> implements std.IEquals<Try<A>> {
    * Based on Phil Freeman's
    * [Stack Safety for Free]{@link http://functorial.com/stack-safety-for-free/index.pdf}.
    *
-   * Described in {@link FlatMap.tailRecM}.
+   * Described in `FlatMap.tailRecM`.
    */
   static tailRecM<A, B>(a: A, f: (a: A) => Try<Either<A, B>>): Try<B> {
     let cursor = a

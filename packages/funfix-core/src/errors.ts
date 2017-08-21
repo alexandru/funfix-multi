@@ -59,8 +59,14 @@ export class CompositeError extends Error {
     reasons = reasons.slice(2)
     if (errors.length > 2) reasons = reasons + ", ..."
     super(reasons)
+
     this.name = "CompositeError"
     this.errorsRef = errors
+
+    // Workaround to make `instanceof` work in ES5
+    const self = this as any
+    self.constructor = CompositeError
+    self.__proto__ = CompositeError.prototype
   }
 
   /**
@@ -76,6 +82,11 @@ export class DummyError extends Error {
   constructor(message?: string) {
     super(message)
     this.name = "DummyError"
+
+    // Workaround to make `instanceof` work in ES5
+    const self = this as any
+    self.constructor = DummyError
+    self.__proto__ = DummyError.prototype
   }
 }
 
@@ -87,6 +98,11 @@ export class NoSuchElementError extends Error {
   constructor(message?: string) {
     super(message)
     this.name = "NoSuchElementError"
+
+    // Workaround to make `instanceof` work in ES5
+    const self = this as any
+    self.constructor = NoSuchElementError
+    self.__proto__ = NoSuchElementError.prototype
   }
 }
 
@@ -98,6 +114,11 @@ export class IllegalInheritanceError extends Error {
   constructor(message?: string) {
     super(message)
     this.name = "IllegalInheritanceError"
+
+    // Workaround to make `instanceof` work in ES5
+    const self = this as any
+    self.constructor = IllegalInheritanceError
+    self.__proto__ = IllegalInheritanceError.prototype
   }
 }
 
@@ -112,6 +133,11 @@ export class IllegalStateError extends Error {
   constructor(message?: string) {
     super(message)
     this.name = "IllegalStateError"
+
+    // Workaround to make `instanceof` work in ES5
+    const self = this as any
+    self.constructor = IllegalStateError
+    self.__proto__ = IllegalStateError.prototype
   }
 }
 
@@ -123,6 +149,11 @@ export class IllegalArgumentError extends Error {
   constructor(message?: string) {
     super(message)
     this.name = "IllegalArgumentError"
+
+    // Workaround to make `instanceof` work in ES5
+    const self = this as any
+    self.constructor = IllegalArgumentError
+    self.__proto__ = IllegalArgumentError.prototype
   }
 }
 
@@ -134,5 +165,25 @@ export class NotImplementedError extends Error {
   constructor(message?: string) {
     super(message)
     this.name = "NotImplementedError"
+
+    // Workaround to make `instanceof` work in ES5
+    const self = this as any
+    self.constructor = NotImplementedError
+    self.__proto__ = NotImplementedError.prototype
+  }
+}
+
+/**
+ * Signals that completion of a procedure took longer than anticipated.
+ */
+export class TimeoutError extends Error {
+  constructor(message?: string) {
+    super(message)
+    this.name = "TimeoutError"
+
+    // Workaround to make `instanceof` work in ES5
+    const self = this as any
+    self.constructor = TimeoutError
+    self.__proto__ = TimeoutError.prototype
   }
 }

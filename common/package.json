@@ -1,17 +1,48 @@
 {
   "version": "4.0.0",
-  "main": "dist/umd.js",
+  "main": "dist/index.umd.js",
   "module": "dist/index.js",
   "typings": "dist/types/index.d.ts",
 
   "scripts": {
-    "lint": "npm run bin-flow -- check && npm run bin-tslint -- --type-check --project tsconfig.json -e **/node_modules/** -e **/dist/** -t codeFrame src/**/*.ts",
-    "prebuild": "../../node_modules/.bin/rimraf dist",
-    "build": "npm run bin-tsc && npm run bin-rollup -- -c",
+    "lint": "flow check && tslint --type-check --project tsconfig.json -e **/node_modules/** -e **/dist/** -t codeFrame src/**/*.ts",
+    "prebuild": "rimraf dist",
+    "build": "tsc && rollup -c && npm run copy-flow",
+    "start": "node ../../node_modules/.bin/tsc-watch --onSuccess 'rollup -c'",
 
-    "bin-tsc": "../../node_modules/.bin/tsc",
-    "bin-rollup": "../../node_modules/.bin/rollup",
-    "bin-flow": "../../node_modules/.bin/flow",
-    "bin-tslint": "../../node_modules/.bin/tslint"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:prod": "npm run lint && npm run test -- --coverage --no-cache",
+    "copy-flow": "../../scripts/copy-flow.js ."
+  },
+
+  "jest": {
+    "globals": {
+      "ts-jest": {
+        "skipBabel": true
+      }
+    },
+    "mapCoverage": true,
+    "transform": {
+      ".(ts|tsx)": "<rootDir>/../../node_modules/ts-jest/preprocessor.js"
+    },
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/test/"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 90,
+        "functions": 90,
+        "lines": 90,
+        "statements": 90
+      }
+    }
   }
 }
