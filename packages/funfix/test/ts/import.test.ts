@@ -15,7 +15,14 @@
  * limitations under the License.
  */
 
-/* @flow */
+import { Option, Future, is, Some, Success } from "../../src"
 
-declare export * from "funfix-core";
-declare export * from "funfix-exec";
+describe("sanity test", () => {
+  test("works for Option", () => {
+    expect(is(Option.of(3), Some(3))).toBeTruthy()
+  })
+
+  test("works for Future", () => {
+    expect(is(Future.pure(3).value(), Some(Success(3)))).toBeTruthy()
+  })
+})

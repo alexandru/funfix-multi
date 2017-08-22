@@ -17,5 +17,7 @@
 
 /* @flow */
 
-declare export * from "funfix-core";
-declare export * from "funfix-exec";
+import { Option, Future } from "../../src/"
+
+const opt: Option<number> = Option.of(10)
+const f: Future<string> = Future.of(() => "Hello!")

@@ -196,6 +196,14 @@ describe("PureFuture", () => {
     expect(fa.withScheduler(s1)).toBe(fa)
     expect(fa.withScheduler(s2) !== fa).toBeTruthy()
   })
+
+  test("unit() always yields the same reference", () => {
+    expect(Future.unit()).toBe(Future.unit())
+  })
+
+  test("unit() yields undefined", () => {
+    expect(is(Future.unit().value(), Some(Success(undefined)))).toBeTruthy()
+  })
 })
 
 describe("FutureBuilder", () => {
@@ -1071,6 +1079,18 @@ describe("Future.traverse", () => {
     return fa.toPromise().then(x => {
       expect(x).toBe(6)
     })
+  })
+})
+
+describe("Future.tailRecM", () => {
+  test("is tail safe", () => {
+    const f = Future.tailRecM(0, a => {
+      return a < 10000
+        ? Future.pure(Left(a + 1))
+        : Future.pure(Right(a))
+    })
+
+    expect(is(f.value(), Some(Success(10000)))).toBeTruthy()
   })
 })
 
