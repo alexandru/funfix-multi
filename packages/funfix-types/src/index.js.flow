@@ -15,25 +15,11 @@
  * limitations under the License.
  */
 
-import { Option, Future, is, Some, Success, Eval, Monad, monadErrorOf } from "../../src"
+/* @flow */
 
-describe("sanity test", () => {
-  test("works for Option", () => {
-    expect(is(Option.of(3), Some(3))).toBeTruthy()
-  })
-
-  test("works for Future", () => {
-    expect(is(Future.pure(3).value(), Some(Success(3)))).toBeTruthy()
-  })
-
-  test("works for Eval", () => {
-    expect(Eval.of(() => 10).get()).toBe(10)
-  })
-
-  test("works for Monad", () => {
-    const m = monadErrorOf(Eval)
-    const v = m.flatMap(Eval.of(() => 1), a => Eval.of(() => a + 1)) as Eval<number>
-    console.info(Eval._funTypes)
-    expect(v.get()).toBe(2)
-  })
-})
+declare export * from "./kinds"
+declare export * from "./eq"
+declare export * from "./functor"
+declare export * from "./applicative"
+declare export * from "./monad"
+declare export * from "./instances"

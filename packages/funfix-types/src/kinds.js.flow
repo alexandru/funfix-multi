@@ -15,25 +15,30 @@
  * limitations under the License.
  */
 
-import { Option, Future, is, Some, Success, Eval, Monad, monadErrorOf } from "../../src"
+/* @flow */
 
-describe("sanity test", () => {
-  test("works for Option", () => {
-    expect(is(Option.of(3), Some(3))).toBeTruthy()
-  })
+export type Constructor<T> =
+  Class<T> | { +_funErasure: T }
 
-  test("works for Future", () => {
-    expect(is(Future.pure(3).value(), Some(Success(3)))).toBeTruthy()
-  })
+export type TypeClass<F> = Constructor<F> & {
+  +_funTypeId: string;
+  +_funSupertypeIds: string[];
+}
 
-  test("works for Eval", () => {
-    expect(Eval.of(() => 10).get()).toBe(10)
-  })
+export interface HK<F, A> {
+  +_funKindF: F;
+  +_funKindA: A;
+}
 
-  test("works for Monad", () => {
-    const m = monadErrorOf(Eval)
-    const v = m.flatMap(Eval.of(() => 1), a => Eval.of(() => a + 1)) as Eval<number>
-    console.info(Eval._funTypes)
-    expect(v.get()).toBe(2)
-  })
-})
+declare export class Equiv<A> {
+  +lh: A;
+  +rh: A;
+
+  static of<A>(lh: A, rh: A): Equiv<A>;
+}
+
+declare export function registerTypeClassInstance<F>(tc: TypeClass<F>):
+  <T>(c: Constructor<T>, instance: F) => void;
+
+declare export function getTypeClassInstance<F>(tc: TypeClass<F>):
+  <T>(c: Constructor<T>) => F;

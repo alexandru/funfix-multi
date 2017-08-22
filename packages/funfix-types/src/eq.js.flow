@@ -15,25 +15,26 @@
  * limitations under the License.
  */
 
-import { Option, Future, is, Some, Success, Eval, Monad, monadErrorOf } from "../../src"
+/* @flow */
 
-describe("sanity test", () => {
-  test("works for Option", () => {
-    expect(is(Option.of(3), Some(3))).toBeTruthy()
-  })
+import type { Constructor } from "./kinds"
 
-  test("works for Future", () => {
-    expect(is(Future.pure(3).value(), Some(Success(3)))).toBeTruthy()
-  })
+export interface Eq<A> {
+  eqv(lh: A, rh: A): boolean;
 
-  test("works for Eval", () => {
-    expect(Eval.of(() => 10).get()).toBe(10)
-  })
+  // Implements TypeClass<F>
+  static +_funTypeId: string;
+  static +_funSupertypeIds: string[];
+  static +_funErasure: Eq<any>;
+}
 
-  test("works for Monad", () => {
-    const m = monadErrorOf(Eval)
-    const v = m.flatMap(Eval.of(() => 1), a => Eval.of(() => a + 1)) as Eval<number>
-    console.info(Eval._funTypes)
-    expect(v.get()).toBe(2)
-  })
-})
+export interface EqLaws<A> {
+  +F: Eq<A>;
+
+  reflexive(a: A): boolean;
+  symmetric(x: A, y: A): boolean;
+  transitive(x: A, y: A, z: A): boolean;
+}
+
+declare export function eqOf<F>(c: Constructor<F>): Eq<F>;
+declare export function eqLawsOf<A>(instance: Eq<A>): EqLaws<A>;
