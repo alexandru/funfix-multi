@@ -36,4 +36,9 @@ if (!fs.existsSync(packageJsonPath)) {
 process.chdir(currentDir)
 const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"))
 
+if (!fs.existsSync(path.join(currentDir, "rootdoc.md"))) {
+  console.info(`No docs to generate for sub-project ${pkg.name}`)
+  process.exit(0)
+}
+
 exec(`./node_modules/.bin/typedoc --mode file --theme minimal --listInvalidSymbolLinks --excludeNotExported --excludePrivate --out dist/docs --target es6 --name ${pkg.name} --readme rootdoc.md src`)

@@ -19,3 +19,4 @@
 
 declare export * from "funfix-core";
 declare export * from "funfix-exec";
+declare export * from "funfix-effect";

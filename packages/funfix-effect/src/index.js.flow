@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-// Exporting everything
-export * from "funfix-core"
-export * from "funfix-exec"
-export * from "funfix-effect"
+/* @flow */
+
+declare export * from "./eval";

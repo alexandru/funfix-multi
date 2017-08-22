@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { Option, Future, is, Some, Success } from "../../src"
+import { Option, Future, is, Some, Success, Eval } from "../../src"
 
 describe("sanity test", () => {
   test("works for Option", () => {
@@ -24,5 +24,9 @@ describe("sanity test", () => {
 
   test("works for Future", () => {
     expect(is(Future.pure(3).value(), Some(Success(3)))).toBeTruthy()
+  })
+
+  test("works for Eval", () => {
+    expect(Eval.of(() => 10).get()).toBe(10)
   })
 })
