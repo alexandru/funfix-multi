@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 
-/// <reference path="../../../../node_modules/@types/mocha/index.d.ts" />
+import * as jv from "jsverify"
+import * as inst from "./instances"
+import * as assert from "assert"
+import { assertEqual, assertNotEqual } from "./common"
 
 import { Try, Success, Failure, DummyError, NoSuchElementError } from "../../src/"
 import { None, Some, Left, Right } from "../../src/"
 import { IllegalStateError } from "../../src/"
 import { is, hashCode } from "../../src/"
-
-import * as jv from "jsverify"
-import * as inst from "./instances"
 
 describe("Try.of", () => {
   jv.property("should work for successful functions",
@@ -33,7 +33,7 @@ describe("Try.of", () => {
 
   it("should catch exceptions", () => {
     const error = new DummyError("dummy")
-    expect(is(Try.of(() => { throw error }), Failure(error))).toBe(true)
+    assertEqual(Try.of(() => { throw error }), Failure(error))
   })
 })
 
@@ -45,7 +45,7 @@ describe("Try #get", () => {
 
   it("works for failure", () => {
     const ref = Try.failure(new DummyError("dummy"))
-    expect(() => ref.get()).toThrowError()
+    assert.throws(() => ref.get())
   })
 })
 
@@ -75,17 +75,17 @@ describe("Try #equals", () => {
     const fa2 = Success("hello1")
     const fa3 = Success("hello2")
 
-    expect(fa1 === fa2).toBe(false)
-    expect(is(fa1, fa2)).toBe(true)
-    expect(is(fa2, fa1)).toBe(true)
+    assert.ok(!(fa1 === fa2))
+    assertEqual(fa1, fa2)
+    assertEqual(fa2, fa1)
 
-    expect(fa1.equals(fa3)).toBe(false)
-    expect(is(fa1, fa3)).toBe(false)
-    expect(is(fa3, fa1)).toBe(false)
+    assert.ok(!(fa1.equals(fa3)))
+    assertNotEqual(fa1, fa3)
+    assertNotEqual(fa3, fa1)
 
-    expect(is(Success(fa1), Success(fa2))).toBe(true)
-    expect(is(Success(fa1), Success(fa3))).toBe(false)
-    expect(is(Success(fa1), Success(Success("100")))).toBe(false)
+    assertEqual(Success(fa1), Success(fa2))
+    assertNotEqual(Success(fa1), Success(fa3))
+    assertNotEqual(Success(fa1), Success(Success("100")))
   })
 
   it("Failure should have structural equality", () => {
@@ -93,22 +93,22 @@ describe("Try #equals", () => {
     const fa2 = Failure("hello1")
     const fa3 = Failure("hello2")
 
-    expect(fa1 === fa2).toBe(false)
-    expect(is(fa1, fa2)).toBe(true)
-    expect(is(fa2, fa1)).toBe(true)
+    assert.ok(!(fa1 === fa2))
+    assertEqual(fa1, fa2)
+    assertEqual(fa2, fa1)
 
-    expect(fa1.equals(fa3)).toBe(false)
-    expect(is(fa1, fa3)).toBe(false)
-    expect(is(fa3, fa1)).toBe(false)
+    assert.ok(!(fa1.equals(fa3)))
+    assertNotEqual(fa1, fa3)
+    assertNotEqual(fa3, fa1)
 
-    expect(is(Failure(fa1), Failure(fa2))).toBe(true)
-    expect(is(Failure(fa1), Failure(fa3))).toBe(false)
-    expect(is(Failure(fa1), Failure(Failure("100")))).toBe(false)
+    assertEqual(Failure(fa1), Failure(fa2))
+    assertNotEqual(Failure(fa1), Failure(fa3))
+    assertNotEqual(Failure(fa1), Failure(Failure("100")))
   })
 
   jv.property("protects against other ref being null",
     inst.arbTry,
-    fa => fa.equals(null) === false
+    fa => fa.equals(null as any) === false
   )
 })
 
@@ -156,7 +156,7 @@ describe("Try #filter", () => {
     inst.arbSuccess,
     fa => {
       const dummy = new DummyError("dummy")
-      const p = _ => { throw dummy }
+      const p = (_: any) => { throw dummy }
       return is(fa.filter(p), Failure(dummy))
     }
   )
@@ -165,12 +165,12 @@ describe("Try #filter", () => {
 describe("Try #fold", () => {
   it("works for success", () => {
     const r = Success(1).fold(e => 0, a => a + 1)
-    expect(r).toBe(2)
+    assertEqual(r, 2)
   })
 
   it("works for failure", () => {
     const r = Failure(1).fold(e => 0, a => a)
-    expect(r).toBe(0)
+    assertEqual(r, 0)
   })
 })
 
@@ -199,7 +199,7 @@ describe("Try #flatMap", () => {
     inst.arbSuccess,
     fa => {
       const dummy = new DummyError("dummy")
-      const f = _ => { throw dummy }
+      const f = (_: any) => { throw dummy }
       return is(fa.flatMap(f), Failure(dummy))
     }
   )
@@ -236,7 +236,7 @@ describe("Try #forEach", () => {
   it("should work for success", () => {
     let effect = 0
     Success(10).forEach(a => { effect = a })
-    expect(effect).toBe(10)
+    assertEqual(effect, 10)
   })
 
   it("should do nothing for failure", () => {
@@ -320,7 +320,7 @@ describe("Try #recover", () => {
     const error2 = new DummyError("error2")
 
     const fa = Failure(error1).recover(_ => { throw error2 })
-    expect(fa.failed().get()).toBe(error2)
+    assertEqual(fa.failed().get(), error2)
   })
 })
 
@@ -340,7 +340,7 @@ describe("Try #recoverWith", () => {
     const error2 = new DummyError("error2")
 
     const fa = Failure(error1).recoverWith(_ => { throw error2 })
-    expect(fa.failed().get()).toBe(error2)
+    assertEqual(fa.failed().get(), error2)
   })
 })
 
@@ -429,7 +429,7 @@ describe("Try map2, map3, map4, map5, map6", () => {
     const received =
       Try.map2(fa, fa, _ => { throw dummy })
 
-    expect(is(received, Failure(dummy))).toBe(true)
+    assertEqual(received, Failure(dummy))
   })
 
   it("map3 protects against user error", () => {
@@ -438,7 +438,7 @@ describe("Try map2, map3, map4, map5, map6", () => {
     const received =
       Try.map3(fa, fa, fa, _ => { throw dummy })
 
-    expect(is(received, Failure(dummy))).toBe(true)
+    assertEqual(received, Failure(dummy))
   })
 
   it("map4 protects against user error", () => {
@@ -447,7 +447,7 @@ describe("Try map2, map3, map4, map5, map6", () => {
     const received =
       Try.map4(fa, fa, fa, fa, _ => { throw dummy })
 
-    expect(is(received, Failure(dummy))).toBe(true)
+    assertEqual(received, Failure(dummy))
   })
 
   it("map5 protects against user error", () => {
@@ -456,7 +456,7 @@ describe("Try map2, map3, map4, map5, map6", () => {
     const received =
       Try.map5(fa, fa, fa, fa, fa, _ => { throw dummy })
 
-    expect(is(received, Failure(dummy))).toBe(true)
+    assertEqual(received, Failure(dummy))
   })
 
   it("map6 protects against user error", () => {
@@ -465,34 +465,34 @@ describe("Try map2, map3, map4, map5, map6", () => {
     const received =
       Try.map6(fa, fa, fa, fa, fa, fa, _ => { throw dummy })
 
-    expect(is(received, Failure(dummy))).toBe(true)
+    assertEqual(received, Failure(dummy))
   })
 })
 
 describe("Try.unit", () => {
-  test("returns the same reference and works", () => {
+  it("returns the same reference and works", () => {
     const e1 = Try.unit()
     const e2 = Try.unit()
 
-    expect(e1).toBe(e2)
-    expect(e1.get()).toBeUndefined()
+    assertEqual(e1, e2)
+    assert.equal(e1.get(), undefined)
   })
 })
 
 describe("Try.tailRecM", () => {
   it("is stack safe", () => {
     const fa = Try.tailRecM(0, a => a < 1000 ? Success(Left(a + 1)) : Success(Right(a)))
-    expect(fa.get()).toBe(1000)
+    assertEqual(fa.get(), 1000)
   })
 
   it("returns the failure unchanged", () => {
     const fa = Try.tailRecM(0, a => Failure("failure"))
-    expect(fa.failed().get()).toBe("failure")
+    assertEqual(fa.failed().get(), "failure")
   })
 
   it("protects against user errors", () => {
     // tslint:disable:no-string-throw
     const fa = Try.tailRecM(0, a => { throw "dummy" })
-    expect(fa.failed().get()).toBe("dummy")
+    assertEqual(fa.failed().get(), "dummy")
   })
 })

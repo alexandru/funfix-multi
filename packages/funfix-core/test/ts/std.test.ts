@@ -15,140 +15,142 @@
  * limitations under the License.
  */
 
-/// <reference path="../../../../node_modules/@types/mocha/index.d.ts" />
-
-import { IEquals, hashCode, is, equals, id, applyMixins } from "../../src/"
 import * as jv from "jsverify"
 import * as inst from "./instances"
+import * as assert from "assert"
 
-describe("utils", () => {
-  jv.property("id always return the same thing",
-    inst.arbAny,
-    a => is(id(a), a)
-  )
-})
+import { IEquals, hashCode, is, equals, id, applyMixins } from "../../src/"
 
-describe("hashCode", () => {
-  jv.property("hashCode(v) == hashCode(v)",
-    inst.arbAny,
-    v => hashCode(v) === hashCode(v)
-  )
-
-  jv.property("hashCode(v1) != hashCode(v2) => v1 != v2",
-    jv.string, jv.string,
-    (v1, v2) => hashCode(v1) === hashCode(v2) || v1 !== v2
-  )
-
-  it("should work for Dates", () => {
-    const d = new Date()
-    expect(hashCode(d)).toBe(hashCode(d.valueOf()))
-  })
-})
-
-describe("is / equals", () => {
-  jv.property("equals(v, v) == true",
-    inst.arbAny,
-    v => is(v, v)
-  )
-
-  jv.property("equals(v1, v2) == false => v1 != v2",
-    inst.arbAny, inst.arbAny,
-    (v1, v2) => is(v1, v2) || v1 !== v2
-  )
-
-  jv.property("equals(v1, v2) == equals(v2, v1)",
-    inst.arbAny, inst.arbAny,
-    (v1, v2) => is(v1, v2) === is(v2, v1)
-  )
-
-  jv.property("equals(v1, v2) && equals(v2, v3) => equals(v1, v3) (numbers)",
-    jv.number, jv.number, jv.number,
-    (v1, v2, v3) => is(v1, v2) && is(v2, v3) ? is(v1, v3) : true
-  )
-
-  jv.property("equals(v1, v2) && equals(v2, v3) => equals(v1, v3) (strings)",
-    jv.string, jv.string, jv.string,
-    (v1, v2, v3) => is(v1, v2) && is(v2, v3) ? is(v1, v3) : true
-  )
-
-  jv.property("`is` is an alias of `equals`",
-    inst.arbAny, inst.arbAny,
-    (a, b) => is(a, b) === equals(a, b)
-  )
-
-  it("should work for NaN", () => {
-    expect(is(NaN, 1)).toBe(false)
-    expect(is(1, NaN)).toBe(false)
-    expect(is(NaN, NaN)).toBe(true)
+describe("std", () => {
+  describe("id", () => {
+    jv.property("id always return the same thing",
+      inst.arbAny,
+      a => is(id(a), a)
+    )
   })
 
-  it("should work for Dates", () => {
-    const d1 = new Date()
-    const d2 = new Date(d1.valueOf())
+  describe("hashCode", () => {
+    jv.property("hashCode(v) == hashCode(v)",
+      inst.arbAny,
+      v => hashCode(v) === hashCode(v)
+    )
 
-    expect(d1 === d2).toBe(false)
-    expect(is(d1, d2)).toBe(true)
+    jv.property("hashCode(v1) != hashCode(v2) => v1 != v2",
+      jv.string, jv.string,
+      (v1, v2) => hashCode(v1) === hashCode(v2) || v1 !== v2
+    )
+
+    it("should work for Dates", () => {
+      const d = new Date()
+      assert.equal(hashCode(d), hashCode(d.valueOf()))
+    })
   })
 
-  it("should work for Box(value) with valueOf", () => {
-    class Box<A> {
-      constructor(public value: A) {}
-      valueOf() { return this.value }
+  describe("is / equals", () => {
+    jv.property("equals(v, v) == true",
+      inst.arbAny,
+      v => is(v, v)
+    )
+
+    jv.property("equals(v1, v2) == false => v1 != v2",
+      inst.arbAny, inst.arbAny,
+      (v1, v2) => is(v1, v2) || v1 !== v2
+    )
+
+    jv.property("equals(v1, v2) == equals(v2, v1)",
+      inst.arbAny, inst.arbAny,
+      (v1, v2) => is(v1, v2) === is(v2, v1)
+    )
+
+    jv.property("equals(v1, v2) && equals(v2, v3) => equals(v1, v3) (numbers)",
+      jv.number, jv.number, jv.number,
+      (v1, v2, v3) => is(v1, v2) && is(v2, v3) ? is(v1, v3) : true
+    )
+
+    jv.property("equals(v1, v2) && equals(v2, v3) => equals(v1, v3) (strings)",
+      jv.string, jv.string, jv.string,
+      (v1, v2, v3) => is(v1, v2) && is(v2, v3) ? is(v1, v3) : true
+    )
+
+    jv.property("`is` is an alias of `equals`",
+      inst.arbAny, inst.arbAny,
+      (a, b) => is(a, b) === equals(a, b)
+    )
+
+    it("should work for NaN", () => {
+      assert.ok(!is(NaN, 1))
+      assert.ok(!is(1, NaN))
+      assert.ok(is(NaN, NaN))
+    })
+
+    it("should work for Dates", () => {
+      const d1 = new Date()
+      const d2 = new Date(d1.valueOf())
+
+      assert.notEqual(d1, d2)
+      assert.ok(is(d1, d2))
+    })
+
+    it("should work for Box(value) with valueOf", () => {
+      class Box<A> {
+        constructor(public value: A) {}
+        valueOf() { return this.value }
+      }
+
+      assert.equal(new Box("value").valueOf(), "value")
+      assert.ok(is(new Box(null as any), new Box(null as any)))
+      assert.ok(is(new Box("value"), new Box("value")))
+      assert.equal(is(new Box("value"), new Box(null as any)), false)
+      assert.equal(is(new Box(null as any), new Box("value")), false)
+
+      assert.equal(is(new Box(NaN), new Box(1)), false)
+      assert.equal(is(new Box(1), new Box(NaN)), false)
+      assert.ok(is(new Box(NaN), new Box(NaN)))
+    })
+
+    it("should work for Box(value) implements IEquals", () => {
+      class Box<A> implements IEquals<Box<A>> {
+        constructor(public value: A) {}
+        equals(other: Box<A>) { return is(this.value, other.value) }
+        hashCode() { return hashCode(this.value) }
+      }
+
+      assert.ok(is(new Box(null as any), new Box(null as any)))
+      assert.ok(is(new Box("value"), new Box("value")))
+      assert.equal(is(new Box("value"), new Box(null as any)), false)
+      assert.equal(is(new Box(null as any), new Box("value")), false)
+
+      assert.equal(is(new Box(NaN), new Box(1)), false)
+      assert.equal(is(new Box(1), new Box(NaN)), false)
+      assert.ok(is(new Box(NaN), new Box(NaN)))
+    })
+  })
+
+  describe("applyMixins", () => {
+    class Base {
+      hello(): string { return "Hello!" }
     }
 
-    expect(new Box("value").valueOf()).toBe("value")
-    expect(is(new Box(null), new Box(null))).toBe(true)
-    expect(is(new Box("value"), new Box("value"))).toBe(true)
-    expect(is(new Box("value"), new Box(null))).toBe(false)
-    expect(is(new Box(null), new Box("value"))).toBe(false)
-
-    expect(is(new Box(NaN), new Box(1))).toBe(false)
-    expect(is(new Box(1), new Box(NaN))).toBe(false)
-    expect(is(new Box(NaN), new Box(NaN))).toBe(true)
-  })
-
-  it("should work for Box(value) implements IEquals", () => {
-    class Box<A> implements IEquals<Box<A>> {
-      constructor(public value: A) {}
-      equals(other: Box<A>) { return is(this.value, other.value) }
-      hashCode() { return hashCode(this.value) }
+    class Child1 implements Base {
+      hello: () => string
     }
 
-    expect(is(new Box(null), new Box(null))).toBe(true)
-    expect(is(new Box("value"), new Box("value"))).toBe(true)
-    expect(is(new Box("value"), new Box(null))).toBe(false)
-    expect(is(new Box(null), new Box("value"))).toBe(false)
+    applyMixins(Child1, [Base])
 
-    expect(is(new Box(NaN), new Box(1))).toBe(false)
-    expect(is(new Box(1), new Box(NaN))).toBe(false)
-    expect(is(new Box(NaN), new Box(NaN))).toBe(true)
-  })
-})
+    class Child2 implements Base {
+      hello(): string { return "Override!" }
+    }
 
-describe("applyMixins", () => {
-  class Base {
-    hello(): string { return "Hello!" }
-  }
+    applyMixins(Child2, [Base])
 
-  class Child1 implements Base {
-    hello: () => string
-  }
+    it("provide default implementation", () => {
+      const ref = new Child1()
+      assert.equal(ref.hello(), "Hello!")
+    })
 
-  applyMixins(Child1, [Base])
-
-  class Child2 implements Base {
-    hello(): string { return "Override!" }
-  }
-
-  applyMixins(Child2, [Base])
-
-  test("provide default implementation", () => {
-    const ref = new Child1()
-    expect(ref.hello()).toBe("Hello!")
-  })
-
-  test("don't override existing implementation", () => {
-    const ref = new Child2()
-    expect(ref.hello()).toBe("Override!")
+    it("don't override existing implementation", () => {
+      const ref = new Child2()
+      assert.equal(ref.hello(), "Override!")
+    })
   })
 })

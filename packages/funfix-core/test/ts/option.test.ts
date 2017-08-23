@@ -15,465 +15,463 @@
  * limitations under the License.
  */
 
-/// <reference path="../../../../node_modules/@types/mocha/index.d.ts" />
+import * as assert from "assert"
+import * as jv from "jsverify"
+import * as inst from "./instances"
+import { assertEqual, assertNotEqual } from "./common"
 
 import { Option, Some, None, Left, Right } from "../../src/"
 import { NoSuchElementError } from "../../src/"
 import { is, hashCode } from "../../src/"
 
-import * as jv from "jsverify"
-import * as inst from "./instances"
-
-describe("Option's constructor", () => {
-  it("Option.of <-> new Option(isEmpty=null)", () => {
-    const F = Option as any
-    is(new F("value"), Option.some("value"))
-    is(new F(null), Option.none())
-    is(new F(undefined), Option.none())
-  })
-})
-
-describe("Option#get", () => {
-  jv.property("Some(number).get() equals number",
-    jv.either(jv.number, jv.constant(null)),
-    n => is(Some(n.valueOf()).get(), n.valueOf())
-  )
-
-  jv.property("Some(option).get() equals option",
-    inst.arbOpt,
-    n => is(Some(n).get(), n)
-  )
-
-  it("should throw in case the option is empty", () => {
-    const ref = Option.empty<number>()
-    try {
-      fail(`unexpected ${ref.get()}`)
-    } catch (e) {
-      expect(e instanceof NoSuchElementError).toBe(true)
-    }
-  })
-})
-
-describe("Option#getOrElse", () => {
-  jv.property("equivalence with #get if nonempty",
-    inst.arbOptNonempty,
-    opt => is(opt.getOrElse(1000), opt.get())
-  )
-
-  it("should fallback in case the option is empty", () => {
-    expect(Option.empty<number>().getOrElse(100)).toBe(100)
-    expect(Option.empty<number>().getOrElseL(() => 100)).toBe(100)
+describe("Option", () => {
+  describe("constructor", () => {
+    it("of(value) <-> new Option(value, isEmpty=null)", () => {
+      const F = Option as any
+      assertEqual(new F("value"), Option.some("value"))
+      assertEqual(new F(null), Option.none())
+      assertEqual(new F(undefined), Option.none())
+    })
   })
 
-  it("should not evaluate getOrElseL if nonempty", () => {
-    let effect = 10
-    const r = Option.of("hello").getOrElseL(() => {
-      effect += 20
-      return "default"
+  describe("#get", () => {
+    jv.property("Some(number).get() equals number",
+      jv.either(jv.number, jv.constant(null)),
+      (n: any) => is(Some(n.valueOf()).get(), n.valueOf())
+    )
+
+    jv.property("Some(option).get() equals option",
+      inst.arbOpt,
+      n => is(Some(n).get(), n)
+    )
+
+    it("should throw in case the option is empty", () => {
+      const ref = Option.empty<number>()
+      try {
+        assert.fail(`unexpected ${ref.get()}`)
+      } catch (e) {
+        assert.ok(e instanceof NoSuchElementError)
+      }
+    })
+  })
+
+  describe("#getOrElse", () => {
+    jv.property("equivalence with #get if nonempty",
+      inst.arbOptNonempty,
+      opt => is(opt.getOrElse(1000), opt.get())
+    )
+
+    it("should fallback in case the option is empty", () => {
+      assertEqual(Option.empty<number>().getOrElse(100), 100)
+      assertEqual(Option.empty<number>().getOrElseL(() => 100), 100)
     })
 
-    expect(effect).toBe(10)
-    expect(r).toBe("hello")
-  })
+    it("should not evaluate getOrElseL if nonempty", () => {
+      let effect = 10
+      const r = Option.of("hello").getOrElseL(() => {
+        effect += 20
+        return "default"
+      })
 
-  it("can fallback to unrelated type", () => {
-    const opt = Option.empty<number>()
-    const r1: number | string = opt.getOrElse("fallback")
-    expect(r1).toBe("fallback")
-    const r2: number | string = opt.getOrElseL(() => "fallback")
-    expect(r2).toBe("fallback")
-  })
-})
-
-describe("Option#orNull", () => {
-  jv.property("equivalence with #get if nonempty",
-    inst.arbOptNonempty,
-    opt => is(opt.orNull(), opt.get())
-  )
-
-  it("should return null in case the option is empty", () => {
-    expect(Option.empty<number>().orNull()).toBeNull()
-  })
-})
-
-describe("Option#orElse", () => {
-  jv.property("mirrors the source if nonempty",
-    inst.arbOptNonempty,
-    opt => is(opt.orElse(None), opt)
-  )
-
-  it("works as a fallback if the source is empty", () => {
-    const other = Option.of(1000)
-    expect(Option.empty<number>().orElse(other)).toBe(other)
-  })
-
-  it("can fallback to unrelated type", () => {
-    const opt = Option.empty<number>()
-    const r: Option<number | string> = opt.orElse(Some("fallback"))
-    expect(r.get()).toBe("fallback")
-  })
-})
-
-describe("Option#orElseL", () => {
-  jv.property("mirrors the source if nonempty",
-    inst.arbOptNonempty,
-    opt => is(opt.orElseL(() => None), opt)
-  )
-
-  jv.property("works as a fallback if the source is empty",
-    inst.arbOpt,
-    opt => is(Option.empty<number>().orElseL(() => opt), opt)
-  )
-
-  jv.property("doesn't evaluate if the source is non-empty",
-    inst.arbOptNonempty,
-    opt => {
-      let effect = false
-      const received = opt.orElseL(() => { effect = true; return None })
-      return received === opt
+      assertEqual(effect, 10)
+      assertEqual(r, "hello")
     })
 
-  it("can fallback to unrelated type", () => {
-    const opt = Option.empty<number>()
-    const r: Option<number | string> = opt.orElseL(() => Some("fallback"))
-    expect(r.get()).toBe("fallback")
-  })
-})
-
-describe("Option#isEmpty, Option#nonEmpty", () => {
-  it("should signal isEmpty=true when empty", () => {
-    expect(None.isEmpty()).toBe(true)
-    expect(None.nonEmpty()).toBe(false)
-    expect(Option.empty().isEmpty()).toBe(true)
-    expect(Option.empty().nonEmpty()).toBe(false)
+    it("can fallback to unrelated type", () => {
+      const opt = Option.empty<number>()
+      const r1: number | string = opt.getOrElse("fallback")
+      assertEqual(r1, "fallback")
+      const r2: number | string = opt.getOrElseL(() => "fallback")
+      assertEqual(r2, "fallback")
+    })
   })
 
-  jv.property("should signal nonEmpty when non-empty",
-    inst.arbOptNonempty,
-    opt => opt.nonEmpty()
-  )
+  describe("#orNull", () => {
+    jv.property("equivalence with #get if nonempty",
+      inst.arbOptNonempty,
+      opt => is(opt.orNull(), opt.get())
+    )
 
-  jv.property("should have consistent isEmpty and nonEmpty",
-    inst.arbOpt,
-    opt => opt.isEmpty() === !opt.nonEmpty()
-  )
-})
-
-describe("Option #equals and #hashCode", () => {
-  jv.property("should yield true for self.equals(self)",
-    inst.arbOpt,
-    opt => opt.equals(opt)
-  )
-
-  jv.property("should yield true for equals(self, self)",
-    inst.arbOpt,
-    opt => is(opt, opt)
-  )
-
-  jv.property("self.hashCode() === self.hashCode() === hashCode(self)",
-    inst.arbOpt,
-    opt => opt.hashCode() === opt.hashCode() && opt.hashCode() === hashCode(opt)
-  )
-
-  jv.property("Option.of(v).hashCode() === Option.of(v).hashCode()",
-    jv.number,
-    n => Option.of(n).hashCode() === Option.of(n).hashCode()
-  )
-
-  it("should do hashCode for none() and some(null)", () => {
-    expect(hashCode(Option.none())).toBe(2433880)
-    expect(hashCode(Option.some(null))).toBe(2433881 << 2)
+    it("should return null in case the option is empty", () => {
+      assertEqual(Option.empty<number>().orNull(), null)
+    })
   })
 
-  it("should have structural equality", () => {
-    const opt1 = Some("hello1")
-    const opt2 = Some("hello1")
-    const opt3 = Some("hello2")
+  describe("#orElse", () => {
+    jv.property("mirrors the source if nonempty",
+      inst.arbOptNonempty,
+      opt => is(opt.orElse(None), opt)
+    )
 
-    expect(opt1 === opt2).toBe(false)
-    expect(is(opt1, opt2)).toBe(true)
-    expect(is(opt2, opt1)).toBe(true)
+    it("works as a fallback if the source is empty", () => {
+      const other = Option.of(1000)
+      assertEqual(Option.empty<number>().orElse(other), other)
+    })
 
-    expect(opt1.equals(opt3)).toBe(false)
-    expect(is(opt1, opt3)).toBe(false)
-    expect(is(opt3, opt1)).toBe(false)
-
-    expect(is(Some(opt1), Some(opt2))).toBe(true)
-    expect(is(Some(opt1), Some(opt3))).toBe(false)
-    expect(is(Some(opt1), Some(None))).toBe(false)
+    it("can fallback to unrelated type", () => {
+      const opt = Option.empty<number>()
+      const r: Option<number | string> = opt.orElse(Some("fallback"))
+      assertEqual(r.get(), "fallback")
+    })
   })
 
-  jv.property("protects against other ref being null",
-    inst.arbOpt,
-    fa => fa.equals(null) === false
-  )
-})
+  describe("#orElseL", () => {
+    jv.property("mirrors the source if nonempty",
+      inst.arbOptNonempty,
+      opt => is(opt.orElseL(() => None), opt)
+    )
 
-describe("Option.map", () => {
-  jv.property("pure(n).map(f) === pure(f(n))",
-    jv.number, jv.fn(jv.number),
-    (n, f) => is(Option.pure(n).map(f), Option.pure(f(n)))
-  )
+    jv.property("works as a fallback if the source is empty",
+      inst.arbOpt,
+      opt => is(Option.empty<number>().orElseL(() => opt), opt)
+    )
 
-  jv.property("covariant identity",
-    inst.arbOpt,
-    opt => opt.map(x => x).equals(opt)
-  )
+    jv.property("doesn't evaluate if the source is non-empty",
+      inst.arbOptNonempty,
+      opt => {
+        let effect = false
+        const received = opt.orElseL(() => { effect = true; return None })
+        return received === opt
+      })
 
-  jv.property("covariant composition",
-    inst.arbOpt, jv.fn(jv.number), jv.fn(jv.number),
-    (opt, f, g) => opt.map(f).map(g).equals(opt.map(x => g(f(x))))
-  )
-
-  jv.property("Some(n).map(_ => null) == Some(null)",
-    inst.arbOptNonempty,
-    opt => is(opt.map(_ => null), Some(null))
-  )
-})
-
-describe("Option.mapN", () => {
-  jv.property("pure(n).mapN(f) === pure(f(n))",
-    jv.number, jv.fn(jv.number),
-    (n, f) => is(Option.pure(n).mapN(f), Option.pure(f(n)))
-  )
-
-  jv.property("covariant identity",
-    inst.arbOpt,
-    opt => opt.mapN(x => x).equals(opt)
-  )
-
-  jv.property("Some(n).mapN(_ => null) == None",
-    inst.arbOptNonempty,
-    opt => is(opt.mapN(_ => null), None)
-  )
-})
-
-describe("Option.flatMap", () => {
-  jv.property("pure(n).flatMap(f) === f(n)",
-    jv.number, jv.fn(inst.arbOpt),
-    (n, f) => Option.pure(n).flatMap(f).equals(f(n))
-  )
-
-  jv.property("expresses filter",
-    jv.number, jv.fn(jv.bool),
-    (n, p) => {
-      const f = (n: number) => p(n) ? Some(n) : None
-      return Option.of(n).flatMap(f).equals(f(n))
-    }
-  )
-
-  jv.property("express map",
-    inst.arbOpt, jv.fn(jv.number),
-    (opt, f) => opt.flatMap(n => Some(f(n))).equals(opt.map(f))
-  )
-
-  jv.property("left identity",
-    jv.number, jv.fn(inst.arbOpt),
-    (n, f) => Option.pure(n).flatMap(f).equals(f(n))
-  )
-
-  jv.property("right identity",
-    inst.arbOpt,
-    opt => opt.flatMap(Option.some).equals(opt)
-  )
-
-  jv.property("chain is an alias of flatMap",
-    inst.arbOpt, jv.fn(inst.arbOpt),
-    (opt, f) => is(opt.flatMap(f), opt.chain(f))
-  )
-})
-
-describe("Option.filter", () => {
-  jv.property("opt.filter(x => true) === opt",
-    inst.arbOpt,
-    opt => opt.filter(x => true) === opt
-  )
-
-  jv.property("opt.filter(x => false) === none",
-    inst.arbOpt,
-    opt => opt.filter(x => false).equals(None)
-  )
-})
-
-describe("Option.fold", () => {
-  it("works for empty", () => {
-    const x = Option.empty<number>().fold(() => 10, a => a)
-    expect(x).toBe(10)
+    it("can fallback to unrelated type", () => {
+      const opt = Option.empty<number>()
+      const r: Option<number | string> = opt.orElseL(() => Some("fallback"))
+      assertEqual(r.get(), "fallback")
+    })
   })
 
-  it("works for nonempty", () => {
-    const x = Some(100).fold(() => 10, a => a)
-    expect(x).toBe(100)
-  })
-})
+  describe("#isEmpty, #nonEmpty", () => {
+    it("should signal isEmpty=true when empty", () => {
+      assertEqual(None.isEmpty(), true)
+      assertEqual(None.nonEmpty(), false)
+      assertEqual(Option.empty().isEmpty(), true)
+      assertEqual(Option.empty().nonEmpty(), false)
+    })
 
-describe("Option.contains", () => {
-  it("works for empty", () => {
-    const x = Option.empty<number>().contains(10)
-    expect(x).toBe(false)
-  })
+    jv.property("should signal nonEmpty when non-empty",
+      inst.arbOptNonempty,
+      opt => opt.nonEmpty()
+    )
 
-  it("works for primitive", () => {
-    const x1 = Some(10).contains(10)
-    expect(x1).toBe(true)
-    const x2 = Some(10).contains(20)
-    expect(x2).toBe(false)
-  })
-
-  it("works for boxed value", () => {
-    const x1 = Some(Some(10)).contains(Some(10))
-    expect(x1).toBe(true)
-    const x2 = Some(Some(10)).contains(Some(20))
-    expect(x2).toBe(false)
-  })
-})
-
-describe("Option.exists", () => {
-  it("works for empty", () => {
-    const x = Option.empty<number>().exists(a => true)
-    expect(x).toBe(false)
+    jv.property("should have consistent isEmpty and nonEmpty",
+      inst.arbOpt,
+      opt => opt.isEmpty() === !opt.nonEmpty()
+    )
   })
 
-  it("works for nonempty", () => {
-    const x1 = Some(10).exists(a => a % 2 === 0)
-    expect(x1).toBe(true)
-    const x2 = Some(10).exists(a => a % 2 !== 0)
-    expect(x2).toBe(false)
-  })
-})
+  describe("#equals and #hashCode", () => {
+    jv.property("should yield true for self.equals(self)",
+      inst.arbOpt,
+      opt => opt.equals(opt)
+    )
 
-describe("Option.forAll", () => {
-  it("works for empty", () => {
-    const x = Option.empty<number>().forAll(a => true)
-    expect(x).toBe(true)
-  })
+    jv.property("should yield true for equals(self, self)",
+      inst.arbOpt,
+      opt => is(opt, opt)
+    )
 
-  it("works for nonempty", () => {
-    const x1 = Some(10).forAll(a => a % 2 === 0)
-    expect(x1).toBe(true)
-    const x2 = Some(10).forAll(a => a % 2 !== 0)
-    expect(x2).toBe(false)
-  })
-})
+    jv.property("self.hashCode() === self.hashCode() === hashCode(self)",
+      inst.arbOpt,
+      opt => opt.hashCode() === opt.hashCode() && opt.hashCode() === hashCode(opt)
+    )
 
-describe("Option.forEach", () => {
-  it("works for empty", () => {
-    let sum = 0
-    Option.empty<number>().forEach(x => sum += x)
-    expect(sum).toBe(0)
-  })
+    jv.property("of(v).hashCode() === of(v).hashCode()",
+      jv.number,
+      n => Option.of(n).hashCode() === Option.of(n).hashCode()
+    )
 
-  it("works for nonempty", () => {
-    let sum = 0
-    Some(10).forEach(x => sum += x)
-    Some(10).forEach(x => sum += x)
-    expect(sum).toBe(20)
-  })
-})
+    it("should do hashCode for none() and some(null)", () => {
+      assertEqual(hashCode(Option.none()), 2433880)
+      assertEqual(hashCode(Option.some(null)), 2433881 << 2)
+    })
 
-describe("Option.pure", () => {
-  it("is an alias for some", () => {
-    expect(is(Some(10), Option.pure(10))).toBe(true)
-  })
-})
+    it("should have structural equality", () => {
+      const opt1 = Some("hello1")
+      const opt2 = Some("hello1")
+      const opt3 = Some("hello2")
 
-describe("Option shorthands", () => {
-  jv.property("Some(x) == Some(x)",
-    jv.either(jv.number, jv.constant(null)),
-    n => is(Some(n.value), Some(n.value))
-  )
+      assert.ok(opt1 !== opt2)
+      assertEqual(opt1, opt2)
+      assertEqual(opt2, opt1)
 
-  it("None == None", () => {
-    expect(None).toBe(None)
-  })
-})
+      assert.ok(!opt1.equals(opt3))
+      assertNotEqual(opt1, opt3)
+      assertNotEqual(opt3, opt1)
 
-describe("Option map2, map3, map4, map5, map6", () => {
-  jv.property("map2 equivalence with flatMap",
-    inst.arbOpt, inst.arbOpt, jv.fn(jv.number),
-    (o1, o2, fn) => {
-      const f = (...args: any[]) => fn(args)
-      return is(Option.map2(o1, o2, f), o1.flatMap(a1 => o2.map(a2 => f(a1, a2))))
-    }
-  )
+      assertEqual(Some(opt1), Some(opt2))
+      assertNotEqual(Some(opt1), Some(opt3))
+      assertNotEqual(Some(opt1), Some(None))
+    })
 
-  jv.property("map3 equivalence with flatMap",
-    inst.arbOpt, inst.arbOpt, inst.arbOpt, jv.fn(jv.number),
-    (o1, o2, o3, fn) => {
-      const f = (...args: any[]) => fn(args)
-      return is(
-        Option.map3(o1, o2, o3, f),
-        o1.flatMap(a1 => o2.flatMap(a2 => o3.map(a3 => f(a1, a2, a3))))
-      )
-    }
-  )
-
-  jv.property("map4 equivalence with flatMap",
-    inst.arbOpt, inst.arbOpt, inst.arbOpt, inst.arbOpt, jv.fn(jv.number),
-    (o1, o2, o3, o4, fn) => {
-      const f = (...args: any[]) => fn(args)
-      return is(
-        Option.map4(o1, o2, o3, o4, f),
-        o1.flatMap(a1 => o2.flatMap(a2 => o3.flatMap(a3 =>
-          o4.map(a4 => f(a1, a2, a3, a4)))))
-      )
-    }
-  )
-
-  jv.property("map5 equivalence with flatMap",
-    inst.arbOpt, inst.arbOpt, inst.arbOpt, inst.arbOpt, inst.arbOpt, jv.fn(jv.number),
-    (o1, o2, o3, o4, o5, fn) => {
-      const f = (...args: any[]) => fn(args)
-      return is(
-        Option.map5(o1, o2, o3, o4, o5, f),
-        o1.flatMap(a1 => o2.flatMap(a2 => o3.flatMap(a3 =>
-          o4.flatMap(a4 => o5.map(a5 => f(a1, a2, a3, a4, a5))))))
-      )
-    }
-  )
-
-  jv.property("map6 equivalence with flatMap",
-    inst.arbOpt, inst.arbOpt, inst.arbOpt, inst.arbOpt, inst.arbOpt, inst.arbOpt, jv.fn(jv.number),
-    (o1, o2, o3, o4, o5, o6, fn) => {
-      const f = (...args: any[]) => fn(args)
-      return is(
-        Option.map6(o1, o2, o3, o4, o5, o6, f),
-        o1.flatMap(a1 => o2.flatMap(a2 => o3.flatMap(a3 =>
-          o4.flatMap(a4 => o5.flatMap(a5 => o6.map(a6 =>
-            f(a1, a2, a3, a4, a5, a6)))))))
-      )
-    }
-  )
-})
-
-describe("Option.of", () => {
-  it("works", () => {
-    const str: string | null = "hello"
-    const opt: Option<string> = Option.of(str)
-    expect(is(opt, Some("hello"))).toBe(true)
+    jv.property("protects against other ref being null",
+      inst.arbOpt,
+      fa => fa.equals(null as any) === false
+    )
   })
 
-  it("type-checks for null", () => {
-    const str: string | null = null
-    const opt: Option<string> = Option.of(str)
-    expect(is(opt, None)).toBe(true)
+  describe("#map", () => {
+    jv.property("pure(n).map(f) === pure(f(n))",
+      jv.number, jv.fn(jv.number),
+      (n, f) => is(Option.pure(n).map(f), Option.pure(f(n)))
+    )
+
+    jv.property("covariant identity",
+      inst.arbOpt,
+      opt => opt.map(x => x).equals(opt)
+    )
+
+    jv.property("covariant composition",
+      inst.arbOpt, jv.fn(jv.number), jv.fn(jv.number),
+      (opt, f, g) => opt.map(f).map(g).equals(opt.map(x => g(f(x))))
+    )
+
+    jv.property("Some(n).map(_ => null) == Some(null)",
+      inst.arbOptNonempty,
+      opt => is(opt.map(_ => null), Some(null))
+    )
   })
 
-  it("type-checks for undefined", () => {
-    const str: string | undefined = undefined
-    const opt: Option<string> = Option.of(str)
-    expect(is(opt, None)).toBe(true)
-  })
-})
+  describe("#mapN", () => {
+    jv.property("pure(n).mapN(f) === pure(f(n))",
+      jv.number, jv.fn(jv.number),
+      (n, f) => is(Option.pure(n).mapN(f), Option.pure(f(n)))
+    )
 
-describe("Option.tailRecM", () => {
-  it("is stack safe", () => {
-    const fa = Option.tailRecM(0, a => Some(a < 1000 ? Left(a + 1) : Right(a)))
-    expect(fa.get()).toBe(1000)
+    jv.property("covariant identity",
+      inst.arbOpt,
+      opt => opt.mapN(x => x).equals(opt)
+    )
+
+    jv.property("Some(n).mapN(_ => null) == None",
+      inst.arbOptNonempty,
+      opt => is(opt.mapN(_ => null), None)
+    )
   })
 
-  it("None interrupts the loop", () => {
-    const fa = Option.tailRecM(0, a => None)
-    expect(fa).toBe(None)
+  describe("#flatMap", () => {
+    jv.property("pure(n).flatMap(f) === f(n)",
+      jv.number, jv.fn(inst.arbOpt),
+      (n, f) => Option.pure(n).flatMap(f).equals(f(n))
+    )
+
+    jv.property("expresses filter",
+      jv.number, jv.fn(jv.bool),
+      (n, p) => {
+        const f = (n: number) => p(n) ? Some(n) : None
+        return Option.of(n).flatMap(f).equals(f(n))
+      }
+    )
+
+    jv.property("express map",
+      inst.arbOpt, jv.fn(jv.number),
+      (opt, f) => opt.flatMap(n => Some(f(n))).equals(opt.map(f))
+    )
+
+    jv.property("left identity",
+      jv.number, jv.fn(inst.arbOpt),
+      (n, f) => Option.pure(n).flatMap(f).equals(f(n))
+    )
+
+    jv.property("right identity",
+      inst.arbOpt,
+      opt => opt.flatMap(Option.some).equals(opt)
+    )
+
+    jv.property("chain is an alias of flatMap",
+      inst.arbOpt, jv.fn(inst.arbOpt),
+      (opt, f) => is(opt.flatMap(f), opt.chain(f))
+    )
+  })
+
+  describe("#filter", () => {
+    jv.property("opt.filter(x => true) === opt",
+      inst.arbOpt,
+      opt => opt.filter(x => true) === opt
+    )
+
+    jv.property("opt.filter(x => false) === none",
+      inst.arbOpt,
+      opt => opt.filter(x => false).equals(None)
+    )
+  })
+
+  describe("#fold", () => {
+    it("works for empty", () => {
+      const x = Option.empty<number>().fold(() => 10, a => a)
+      assertEqual(x, 10)
+    })
+
+    it("works for nonempty", () => {
+      const x = Some(100).fold(() => 10, a => a)
+      assertEqual(x, 100)
+    })
+  })
+
+  describe("#contains", () => {
+    it("works for empty", () => {
+      const x = Option.empty<number>().contains(10)
+      assertEqual(x, false)
+    })
+
+    it("works for primitive", () => {
+      assert.ok(Some(10).contains(10))
+      assert.ok(!Some(10).contains(20))
+    })
+
+    it("works for boxed value", () => {
+      assert.ok(Some(Some(10)).contains(Some(10)))
+      assert.ok(!Some(Some(10)).contains(Some(20)))
+    })
+  })
+
+  describe("#exists", () => {
+    it("works for empty", () => {
+      const x = Option.empty<number>().exists(a => true)
+      assertEqual(x, false)
+    })
+
+    it("works for nonempty", () => {
+      const x1 = Some(10).exists(a => a % 2 === 0)
+      assertEqual(x1, true)
+      const x2 = Some(10).exists(a => a % 2 !== 0)
+      assertEqual(x2, false)
+    })
+  })
+
+  describe("#forAll", () => {
+    it("works for empty", () => {
+      const x = Option.empty<number>().forAll(a => true)
+      assertEqual(x, true)
+    })
+
+    it("works for nonempty", () => {
+      const x1 = Some(10).forAll(a => a % 2 === 0)
+      assertEqual(x1, true)
+      const x2 = Some(10).forAll(a => a % 2 !== 0)
+      assertEqual(x2, false)
+    })
+  })
+
+  describe("#forEach", () => {
+    it("works for empty", () => {
+      let sum = 0
+      Option.empty<number>().forEach(x => sum += x)
+      assertEqual(sum, 0)
+    })
+
+    it("works for nonempty", () => {
+      let sum = 0
+      Some(10).forEach(x => sum += x)
+      Some(10).forEach(x => sum += x)
+      assertEqual(sum, 20)
+    })
+  })
+
+  describe("pure", () => {
+    it("is an alias for some", () => {
+      assertEqual(Some(10), Option.pure(10))
+    })
+  })
+
+  describe("short-hands", () => {
+    jv.property("Some(x) == Some(x)",
+      jv.either(jv.number, jv.constant(null)),
+      (n: any) => is(Some(n.valueOf()), Some(n.valueOf()))
+    )
+
+    it("None == None", () => {
+      assertEqual(None, None)
+    })
+  })
+
+  describe("map2, map3, map4, map5, map6", () => {
+    jv.property("map2 equivalence with flatMap",
+      inst.arbOpt, inst.arbOpt, jv.fn(jv.number),
+      (o1, o2, fn) => {
+        const f = (...args: any[]) => fn(args)
+        return is(Option.map2(o1, o2, f), o1.flatMap(a1 => o2.map(a2 => f(a1, a2))))
+      }
+    )
+
+    jv.property("map3 equivalence with flatMap",
+      inst.arbOpt, inst.arbOpt, inst.arbOpt, jv.fn(jv.number),
+      (o1, o2, o3, fn) => {
+        const f = (...args: any[]) => fn(args)
+        return is(
+          Option.map3(o1, o2, o3, f),
+          o1.flatMap(a1 => o2.flatMap(a2 => o3.map(a3 => f(a1, a2, a3))))
+        )
+      }
+    )
+
+    jv.property("map4 equivalence with flatMap",
+      inst.arbOpt, inst.arbOpt, inst.arbOpt, inst.arbOpt, jv.fn(jv.number),
+      (o1, o2, o3, o4, fn) => {
+        const f = (...args: any[]) => fn(args)
+        return is(
+          Option.map4(o1, o2, o3, o4, f),
+          o1.flatMap(a1 => o2.flatMap(a2 => o3.flatMap(a3 =>
+            o4.map(a4 => f(a1, a2, a3, a4)))))
+        )
+      }
+    )
+
+    jv.property("map5 equivalence with flatMap",
+      inst.arbOpt, inst.arbOpt, inst.arbOpt, inst.arbOpt, inst.arbOpt, jv.fn(jv.number),
+      (o1, o2, o3, o4, o5, fn) => {
+        const f = (...args: any[]) => fn(args)
+        return is(
+          Option.map5(o1, o2, o3, o4, o5, f),
+          o1.flatMap(a1 => o2.flatMap(a2 => o3.flatMap(a3 =>
+            o4.flatMap(a4 => o5.map(a5 => f(a1, a2, a3, a4, a5))))))
+        )
+      }
+    )
+
+    jv.property("map6 equivalence with flatMap",
+      inst.arbOpt, inst.arbOpt, inst.arbOpt, inst.arbOpt, inst.arbOpt, inst.arbOpt, jv.fn(jv.number),
+      (o1, o2, o3, o4, o5, o6, fn) => {
+        const f = (...args: any[]) => fn(args)
+        return is(
+          Option.map6(o1, o2, o3, o4, o5, o6, f),
+          o1.flatMap(a1 => o2.flatMap(a2 => o3.flatMap(a3 =>
+            o4.flatMap(a4 => o5.flatMap(a5 => o6.map(a6 =>
+              f(a1, a2, a3, a4, a5, a6)))))))
+        )
+      }
+    )
+  })
+
+  describe("of", () => {
+    it("works", () => {
+      const str: string | null = "hello"
+      const opt: Option<string> = Option.of(str)
+      assertEqual(opt, Some("hello"))
+    })
+
+    it("type-checks for null", () => {
+      const str: string | null = null
+      const opt = Option.of(str)
+      assertEqual(opt, None)
+    })
+
+    it("type-checks for undefined", () => {
+      const str: string | undefined = undefined
+      const opt = Option.of(str)
+      assertEqual(opt, None)
+    })
+  })
+
+  describe("tailRecM", () => {
+    it("is stack safe", () => {
+      const fa = Option.tailRecM(0, a => Some(a < 1000 ? Left(a + 1) : Right(a)))
+      assertEqual(fa.get(), 1000)
+    })
+
+    it("None interrupts the loop", () => {
+      const fa = Option.tailRecM(0, a => None)
+      assertEqual(fa, None)
+    })
   })
 })

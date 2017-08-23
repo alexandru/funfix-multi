@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-/// <reference path="../../../../node_modules/@types/mocha/index.d.ts" />
+import * as assert from "assert"
+import { assertEqual, assertNotEqual } from "./common"
 
 import {
   DummyError,
@@ -32,8 +33,8 @@ describe("DummyError", () => {
   it("has custom message", () => {
     const ex = new DummyError("dummy")
 
-    expect(ex.name).toBe("DummyError")
-    expect(ex.message).toBe("dummy")
+    assertEqual(ex.name, "DummyError")
+    assertEqual(ex.message, "dummy")
   })
 })
 
@@ -42,13 +43,12 @@ describe("CompositeError", () => {
     const ex = () => new DummyError("dummy")
     const composite = new CompositeError(["simple", ex(), ex(), ex()])
 
-    expect(composite.name).toBe("CompositeError")
-    expect(composite.message).toBe("simple, DummyError(dummy), ...")
+    assertEqual(composite.name, "CompositeError")
+    assertEqual(composite.message, "simple, DummyError(dummy), ...")
 
-    expect(composite.errors().length).toBe(4)
+    assertEqual(composite.errors().length, 4)
     for (const e of composite.errors()) {
-      expect(e instanceof DummyError || typeof e === "string")
-        .toBe(true)
+      assert.ok(e instanceof DummyError || typeof e === "string")
     }
   })
 
@@ -56,21 +56,21 @@ describe("CompositeError", () => {
     const ex = () => new DummyError("dummy")
     const composite = new CompositeError([ex(), ex()])
 
-    expect(composite.name).toBe("CompositeError")
-    expect(composite.message).toBe("DummyError(dummy), DummyError(dummy)")
+    assertEqual(composite.name, "CompositeError")
+    assertEqual(composite.message, "DummyError(dummy), DummyError(dummy)")
 
-    expect(composite.errors().length).toBe(2)
+    assertEqual(composite.errors().length, 2)
     for (const e of composite.errors()) {
-      expect(e instanceof DummyError).toBe(true)
+      assert.ok(e instanceof DummyError)
     }
   })
 
   it("has custom message for empty array", () => {
     const composite = new CompositeError([])
 
-    expect(composite.name).toBe("CompositeError")
-    expect(composite.message).toBe("")
-    expect(composite.errors().length).toBe(0)
+    assertEqual(composite.name, "CompositeError")
+    assertEqual(composite.message, "")
+    assertEqual(composite.errors().length, 0)
   })
 })
 
@@ -78,8 +78,8 @@ describe("IllegalStateError", () => {
   it("has custom message", () => {
     const ex = new IllegalStateError("dummy")
 
-    expect(ex.name).toBe("IllegalStateError")
-    expect(ex.message).toBe("dummy")
+    assertEqual(ex.name, "IllegalStateError")
+    assertEqual(ex.message, "dummy")
   })
 })
 
@@ -87,8 +87,8 @@ describe("IllegalInheritanceError", () => {
   it("has custom message", () => {
     const ex = new IllegalInheritanceError("dummy")
 
-    expect(ex.name).toBe("IllegalInheritanceError")
-    expect(ex.message).toBe("dummy")
+    assertEqual(ex.name, "IllegalInheritanceError")
+    assertEqual(ex.message, "dummy")
   })
 })
 
@@ -96,8 +96,8 @@ describe("NoSuchElementError", () => {
   it("has custom message", () => {
     const ex = new NoSuchElementError("dummy")
 
-    expect(ex.name).toBe("NoSuchElementError")
-    expect(ex.message).toBe("dummy")
+    assertEqual(ex.name, "NoSuchElementError")
+    assertEqual(ex.message, "dummy")
   })
 })
 
@@ -105,8 +105,8 @@ describe("IllegalArgumentError", () => {
   it("has custom message", () => {
     const ex = new IllegalArgumentError("dummy")
 
-    expect(ex.name).toBe("IllegalArgumentError")
-    expect(ex.message).toBe("dummy")
+    assertEqual(ex.name, "IllegalArgumentError")
+    assertEqual(ex.message, "dummy")
   })
 })
 
@@ -114,8 +114,8 @@ describe("NotImplementedError", () => {
   it("has custom message", () => {
     const ex = new NotImplementedError("dummy")
 
-    expect(ex.name).toBe("NotImplementedError")
-    expect(ex.message).toBe("dummy")
+    assertEqual(ex.name, "NotImplementedError")
+    assertEqual(ex.message, "dummy")
   })
 })
 
@@ -123,7 +123,7 @@ describe("TimeoutError", () => {
   it("has custom message", () => {
     const ex = new TimeoutError("dummy")
 
-    expect(ex.name).toBe("TimeoutError")
-    expect(ex.message).toBe("dummy")
+    assertEqual(ex.name, "TimeoutError")
+    assertEqual(ex.message, "dummy")
   })
 })

@@ -21,7 +21,7 @@ import {
   Option, Some,
   Either, Left, Right,
   Try, Failure, Success,
-  DummyError
+  DummyError, is
 } from "../../src/"
 
 export const arbAnyPrimitive: jv.Arbitrary<any> =
@@ -32,7 +32,7 @@ export const arbOpt: jv.Arbitrary<Option<any>> =
   arbAnyPrimitive.smap(Option.of, opt => opt.orNull())
 
 export const arbOptNonempty: jv.Arbitrary<Option<number>> =
-  jv.number.smap(Some, opt => opt.orNull())
+  jv.number.smap(Some, opt => opt.getOrElse(0))
 
 export const arbEither: jv.Arbitrary<Either<number, number>> =
   jv.number.smap(
