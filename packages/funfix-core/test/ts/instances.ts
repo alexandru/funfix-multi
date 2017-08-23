@@ -22,7 +22,7 @@ import {
   Either, Left, Right,
   Try, Failure, Success,
   DummyError
-} from "../../src/index"
+} from "../../src/"
 
 export const arbAnyPrimitive: jv.Arbitrary<any> =
   jv.sum([jv.number, jv.string, jv.falsy])

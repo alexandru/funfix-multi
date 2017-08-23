@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+/// <reference path="../../../../node_modules/@types/mocha/index.d.ts" />
+
 import { IEquals, hashCode, is, equals, id, applyMixins } from "../../src/"
 import * as jv from "jsverify"
 import * as inst from "./instances"

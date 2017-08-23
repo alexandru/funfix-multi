@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+/// <reference path="../../../../node_modules/@types/mocha/index.d.ts" />
+
 import { Option, Some, None, Left, Right } from "../../src/"
 import { NoSuchElementError } from "../../src/"
 import { is, hashCode } from "../../src/"

@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+/// <reference path="../../../../node_modules/@types/mocha/index.d.ts" />
+
 import { Try, Success, Failure, DummyError, NoSuchElementError } from "../../src/"
 import { None, Some, Left, Right } from "../../src/"
 import { IllegalStateError } from "../../src/"

@@ -11,10 +11,12 @@ const rootDir = path.join(commonDir, "..", "packages")
 const binariesToLink = [
   "tsc",
   "typedoc",
+  "ts-node",
   "rollup",
   "flow",
   "tslint",
-  "jest",
+  "mocha",
+  "nyc",
   "rimraf"
 ]
 
@@ -24,7 +26,8 @@ const filesToLink = [
   "rollup.config.js",
   "tslint.json",
   ".flowconfig",
-  ".editorconfig"
+  ".editorconfig",
+  "mocha.opts"
 ]
 
 for (const p of fs.readdirSync(rootDir)) {

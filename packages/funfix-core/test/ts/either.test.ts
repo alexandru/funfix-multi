@@ -15,9 +15,12 @@
  * limitations under the License.
  */
 
+/// <reference path="../../../../node_modules/@types/mocha/index.d.ts" />
+
 import { hashCode, is, Left, Right, Either, Option } from "../../src/"
 import * as jv from "jsverify"
 import * as inst from "./instances"
+import * as assert from "assert"
 
 describe("Either discrimination", () => {
   jv.property("isRight == !isLeft",
@@ -41,8 +44,7 @@ describe("Either discrimination", () => {
   })
 
   it("left.right() throws", () => {
-    expect(() => Either.left(1).right())
-      .toThrow()
+    assert.throws(() => Either.left(1).right())
   })
 })
 

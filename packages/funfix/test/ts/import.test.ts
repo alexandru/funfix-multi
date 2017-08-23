@@ -15,25 +15,29 @@
  * limitations under the License.
  */
 
+import * as assert from "assert"
 import { Option, Future, is, Some, Success, Eval, Monad, monadErrorOf } from "../../src"
 
-describe("sanity test", () => {
-  test("works for Option", () => {
-    expect(is(Option.of(3), Some(3))).toBeTruthy()
+function assertEquals<A>(lh: A, rh: A): void {
+  assert.ok(is(lh, rh), `${lh} != ${rh}`)
+}
+
+describe("funfix module sanity test", () => {
+  it("works for Option", () => {
+    assertEquals(Option.of(3), Some(3))
   })
 
-  test("works for Future", () => {
-    expect(is(Future.pure(3).value(), Some(Success(3)))).toBeTruthy()
+  it("works for Future", () => {
+    assertEquals(Future.pure(3).value(), Some(Success(3)))
   })
 
-  test("works for Eval", () => {
-    expect(Eval.of(() => 10).get()).toBe(10)
+  it("works for Eval", () => {
+    assertEquals(Eval.of(() => 10).get(), 10)
   })
 
-  test("works for Monad", () => {
+  it("works for Monad", () => {
     const m = monadErrorOf(Eval)
     const v = m.flatMap(Eval.of(() => 1), a => Eval.of(() => a + 1)) as Eval<number>
-    console.info(Eval._funTypes)
-    expect(v.get()).toBe(2)
+    assertEquals(v.get(), 2)
   })
 })

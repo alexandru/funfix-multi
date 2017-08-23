@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+/// <reference path="../../../../node_modules/@types/mocha/index.d.ts" />
+
 import {
   DummyError,
   CompositeError,
