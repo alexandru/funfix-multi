@@ -16,6 +16,8 @@
  */
 
 import { IllegalStateError, DummyError, CompositeError } from "funfix-core"
+import * as assert from "./asserts"
+
 import {
   Cancelable, BoolCancelable,
   AssignCancelable,
@@ -43,10 +45,10 @@ describe("Cancelable.from", () => {
   it("converts any callback", () => {
     let effect = false
     const c = Cancelable.of(() => { effect = true })
-    expect(effect).toBeFalsy()
+    assert.not(effect)
 
     c.cancel()
-    expect(effect).toBeTruthy()
+    assert.ok(effect)
   })
 
   it("is idempotent", () => {
@@ -54,9 +56,9 @@ describe("Cancelable.from", () => {
     const c = Cancelable.of(() => { effect += 1 })
 
     c.cancel()
-    expect(effect).toBe(1)
+    assert.equal(effect, 1)
     c.cancel()
-    expect(effect).toBe(1)
+    assert.equal(effect, 1)
   })
 
   it("is idempotent even if it throws", () => {
@@ -66,7 +68,7 @@ describe("Cancelable.from", () => {
     try {
       ref.cancel()
     } catch (e) {
-      expect(e).toBe(dummy)
+      assert.equal(e, dummy)
     }
 
     // Second time it shouldn't do anything
@@ -80,7 +82,7 @@ describe("Cancelable.empty", () => {
     c.cancel() // no-op
     const c2 = Cancelable.empty()
     c2.cancel() // no-op
-    expect(c2).toBe(c)
+    assert.equal(c2, c)
   })
 })
 
@@ -89,9 +91,9 @@ describe("Cancelable.collection", () => {
     const refs = [new TestCancelable(), new TestCancelable(), new TestCancelable()]
     const main = Cancelable.collection(...refs)
 
-    for (const c of refs) expect(c.isCanceled()).toBeFalsy()
+    for (const c of refs) assert.not(c.isCanceled())
     main.cancel()
-    for (const c of refs) expect(c.isCanceled()).toBeTruthy()
+    for (const c of refs) assert.ok(c.isCanceled())
     main.cancel() // no-op
   })
 
@@ -103,13 +105,13 @@ describe("Cancelable.collection", () => {
       BoolCancelable.empty()]
 
     const main = Cancelable.collection(...refs)
-    for (const c of refs) expect(c.isCanceled()).toBeFalsy()
+    for (const c of refs) assert.not(c.isCanceled())
 
     try {
       main.cancel()
     } catch (e) {
-      expect(e).toBe(dummy)
-      for (const ref of refs) expect(ref.isCanceled()).toBe(true)
+      assert.equal(e, dummy)
+      for (const ref of refs) assert.ok(ref.isCanceled())
     }
   })
 
@@ -122,10 +124,10 @@ describe("Cancelable.collection", () => {
     try {
       main.cancel()
     } catch (e) {
-      expect(e instanceof CompositeError).toBe(true)
+      assert.ok(e instanceof CompositeError)
       const composite = e as CompositeError
-      expect(composite.errors().length).toBe(3)
-      for (const ref of composite.errors()) expect(ref).toBe(dummy)
+      assert.equal(composite.errors().length, 3)
+      for (const ref of composite.errors()) assert.equal(ref, dummy)
     }
   })
 
@@ -140,12 +142,12 @@ describe("Cancelable.collection", () => {
     try {
       main.cancel()
     } catch (e) {
-      expect(e instanceof CompositeError).toBe(true)
+      assert.ok(e instanceof CompositeError)
       const composite = e as CompositeError
 
       const errs = composite.errors()
-      expect(errs.length).toBe(3)
-      for (e of errs) expect(e).toBe(dummy)
+      assert.equal(errs.length, 3)
+      for (e of errs) assert.equal(e, dummy)
     }
   })
 
@@ -156,9 +158,9 @@ describe("Cancelable.collection", () => {
       new TestCancelable()
     )
 
-    expect(ref.isCanceled()).toBe(false)
+    assert.ok(!ref.isCanceled())
     ref.cancel()
-    expect(ref.isCanceled()).toBe(true)
+    assert.ok(ref.isCanceled())
     ref.cancel() // no-op
   })
 })
@@ -168,38 +170,38 @@ describe("BoolCancelable.from", () => {
     let effect = false
     const c = BoolCancelable.of(() => { effect = true })
 
-    expect(effect).toBeFalsy()
-    expect(c.isCanceled()).toBeFalsy()
+    assert.not(effect)
+    assert.not(c.isCanceled())
 
     c.cancel()
-    expect(effect).toBeTruthy()
-    expect(c.isCanceled()).toBeTruthy()
+    assert.ok(effect)
+    assert.ok(c.isCanceled())
   })
 
   it("is idempotent", () => {
     let effect = 0
     const c = BoolCancelable.of(() => { effect += 1 })
-    expect(c.isCanceled()).toBeFalsy()
+    assert.not(c.isCanceled())
 
     c.cancel()
-    expect(effect).toBe(1)
-    expect(c.isCanceled()).toBeTruthy()
+    assert.equal(effect, 1)
+    assert.ok(c.isCanceled())
 
     c.cancel()
-    expect(effect).toBe(1)
-    expect(c.isCanceled()).toBeTruthy()
+    assert.equal(effect, 1)
+    assert.ok(c.isCanceled())
   })
 
   it("is idempotent even if it throws", () => {
     const dummy = new DummyError("dummy")
     const ref = BoolCancelable.of(() => { throw dummy })
-    expect(ref.isCanceled()).toBe(false)
+    assert.not(ref.isCanceled())
 
     try {
       ref.cancel()
     } catch (e) {
-      expect(e).toBe(dummy)
-      expect(ref.isCanceled()).toBe(true)
+      assert.equal(e, dummy)
+      assert.ok(ref.isCanceled())
     }
 
     // Second time it shouldn't do anything
@@ -210,71 +212,71 @@ describe("BoolCancelable.from", () => {
 describe("BoolCancelable.empty", () => {
   it("returns a reference that can be canceled", () => {
     const ref = BoolCancelable.empty()
-    expect(ref.isCanceled()).toBe(false)
+    assert.ok(!ref.isCanceled())
     ref.cancel()
-    expect(ref.isCanceled()).toBe(true)
+    assert.ok(ref.isCanceled())
   })
 })
 
 describe("BoolCancelable.alreadyCanceled", () => {
   it("is already canceled", () => {
     const ref = BoolCancelable.alreadyCanceled()
-    expect(ref.isCanceled()).toBe(true)
+    assert.ok(ref.isCanceled())
     ref.cancel() // no-op
-    expect(ref.isCanceled()).toBe(true)
+    assert.ok(ref.isCanceled())
   })
 
   it("always returns the same reference", () => {
     const c = BoolCancelable.alreadyCanceled()
     const c2 = BoolCancelable.alreadyCanceled()
-    expect(c2).toBe(c)
+    assert.equal(c2, c)
   })
 })
 
 describe("AssignCancelable", () => {
-  test("alreadyCanceled", () => {
+  it("alreadyCanceled", () => {
     const ref = AssignCancelable.alreadyCanceled()
-    expect(ref.isCanceled()).toBe(true)
+    assert.ok(ref.isCanceled())
 
     const c = BoolCancelable.empty()
-    expect(c.isCanceled()).toBe(false)
+    assert.ok(!c.isCanceled())
 
     ref.update(c)
-    expect(c.isCanceled()).toBe(true)
+    assert.ok(c.isCanceled())
 
     // Should be a no-op
     ref.cancel()
   })
 
-  test("empty", () => {
+  it("empty", () => {
     const ref = AssignCancelable.empty()
-    expect(ref instanceof MultiAssignCancelable).toBe(true)
+    assert.ok(ref instanceof MultiAssignCancelable)
   })
 
-  test("from", () => {
+  it("from", () => {
     let effect = 0
     const ref = AssignCancelable.of(() => { effect += 1 })
 
-    expect(ref instanceof MultiAssignCancelable).toBe(true)
+    assert.ok(ref instanceof MultiAssignCancelable)
     ref.cancel()
 
-    expect(ref.isCanceled()).toBe(true)
-    expect(effect).toBe(1)
+    assert.ok(ref.isCanceled())
+    assert.equal(effect, 1)
   })
 })
 
 describe("MultiAssignmentCancelable", () => {
-  test("initialized to given instance", () => {
+  it("initialized to given instance", () => {
     const c = new TestCancelable()
     const ref = new MultiAssignCancelable(c)
     ref.cancel()
 
-    expect(ref.isCanceled()).toBe(true)
-    expect(c.isCanceled()).toBe(true)
+    assert.ok(ref.isCanceled())
+    assert.ok(c.isCanceled())
     ref.cancel() // no-op
   })
 
-  test("update multiple times", () => {
+  it("update multiple times", () => {
     const ref: MultiAssignCancelable =
       MultiAssignCancelable.empty()
 
@@ -288,36 +290,36 @@ describe("MultiAssignmentCancelable", () => {
     const c3 = new TestCancelable()
     ref.update(c3)
 
-    expect(c1.isCanceled()).toBe(false)
-    expect(c2.isCanceled()).toBe(true)
-    expect(c3.isCanceled()).toBe(true)
+    assert.equal(c1.isCanceled(), false)
+    assert.ok(c2.isCanceled())
+    assert.ok(c3.isCanceled())
     ref.cancel() // no-op
   })
 
-  test("cancel while empty", () => {
+  it("cancel while empty", () => {
     const ref: MultiAssignCancelable =
       MultiAssignCancelable.empty()
 
     ref.cancel()
-    expect(ref.isCanceled()).toBe(true)
+    assert.ok(ref.isCanceled())
 
     const c = new TestCancelable()
     ref.update(c)
-    expect(c.isCanceled()).toBe(true)
+    assert.ok(c.isCanceled())
   })
 
-  test("from callback", () => {
+  it("from callback", () => {
     const ref: MultiAssignCancelable =
       MultiAssignCancelable.of(() => { effect += 1 })
 
     let effect = 0
     ref.cancel()
-    expect(effect).toBe(1)
+    assert.equal(effect, 1)
     ref.cancel() // no-op
-    expect(effect).toBe(1)
+    assert.equal(effect, 1)
   })
 
-  test("from callback, update", () => {
+  it("from callback, update", () => {
     let effect = 0
     const ref: MultiAssignCancelable =
       MultiAssignCancelable.of(() => { effect += 1 })
@@ -326,12 +328,12 @@ describe("MultiAssignmentCancelable", () => {
     ref.update(c)
     ref.cancel()
 
-    expect(c.isCanceled()).toBe(true)
-    expect(effect).toBe(0)
+    assert.ok(c.isCanceled())
+    assert.equal(effect, 0)
     ref.cancel() // no-op
   })
 
-  test("collapse on another MultiAssignCancelable", () => {
+  it("collapse on another MultiAssignCancelable", () => {
     const mc1 = new MultiAssignCancelable()
     const mc2 = new MultiAssignCancelable()
 
@@ -340,18 +342,18 @@ describe("MultiAssignmentCancelable", () => {
 
     mc1.update(c1).collapse()
     mc2.update(mc1).collapse()
-    expect(effect).toBe(0)
+    assert.equal(effect, 0)
 
     mc2.cancel()
-    expect(mc2.isCanceled()).toBe(true)
-    expect(effect).toBe(1)
-    expect(mc1.isCanceled()).toBe(false)
+    assert.ok(mc2.isCanceled())
+    assert.equal(effect, 1)
+    assert.ok(!mc1.isCanceled())
 
     mc1.update(mc2).collapse()
-    expect(mc1.isCanceled()).toBe(true)
+    assert.ok(mc1.isCanceled())
   })
 
-  test("clear to undefined", () => {
+  it("clear to undefined", () => {
     const mc = new MultiAssignCancelable()
 
     let effect = 0
@@ -361,23 +363,23 @@ describe("MultiAssignmentCancelable", () => {
     mc.clear()
 
     mc.cancel()
-    expect(effect).toBe(0)
+    assert.equal(effect, 0)
     mc.clear() // no-op
   })
 })
 
 describe("SerialAssignmentCancelable", () => {
-  test("initialized to given instance", () => {
+  it("initialized to given instance", () => {
     const c = new TestCancelable()
     const ref = new SerialCancelable(c)
     ref.cancel()
 
-    expect(ref.isCanceled()).toBe(true)
-    expect(c.isCanceled()).toBe(true)
+    assert.ok(ref.isCanceled())
+    assert.ok(c.isCanceled())
     ref.cancel() // no-op
   })
 
-  test("update multiple times", () => {
+  it("update multiple times", () => {
     const ref: SerialCancelable =
       SerialCancelable.empty()
 
@@ -391,38 +393,38 @@ describe("SerialAssignmentCancelable", () => {
     const c3 = new TestCancelable()
     ref.update(c3)
 
-    expect(c1.isCanceled()).toBe(true)
-    expect(c2.isCanceled()).toBe(true)
-    expect(c3.isCanceled()).toBe(true)
+    assert.ok(c1.isCanceled())
+    assert.ok(c2.isCanceled())
+    assert.ok(c3.isCanceled())
 
     ref.cancel()
-    expect(ref.isCanceled()).toBe(true)
+    assert.ok(ref.isCanceled())
     ref.cancel() // no-op
   })
 
-  test("cancel while empty", () => {
+  it("cancel while empty", () => {
     const ref: SerialCancelable =
       SerialCancelable.empty()
 
     ref.cancel()
-    expect(ref.isCanceled()).toBe(true)
+    assert.ok(ref.isCanceled())
 
     const c = new TestCancelable()
     ref.update(c)
-    expect(c.isCanceled()).toBe(true)
+    assert.ok(c.isCanceled())
   })
 
-  test("from callback", () => {
+  it("from callback", () => {
     let effect = 0
     const ref: SerialCancelable =
       SerialCancelable.of(() => { effect += 1 })
 
     ref.cancel()
-    expect(effect).toBe(1)
+    assert.equal(effect, 1)
     ref.cancel() // no-op
   })
 
-  test("from callback, update", () => {
+  it("from callback, update", () => {
     let effect = 0
     const ref = SerialCancelable.of(() => { effect += 1 })
 
@@ -430,45 +432,45 @@ describe("SerialAssignmentCancelable", () => {
     ref.update(c)
     ref.cancel()
 
-    expect(c.isCanceled()).toBe(true)
-    expect(effect).toBe(1)
+    assert.ok(c.isCanceled())
+    assert.equal(effect, 1)
     ref.cancel() // no-op
   })
 })
 
 describe("SingleAssignmentCancelable", () => {
-  test("update once before cancel", () => {
+  it("update once before cancel", () => {
     const ref: SingleAssignCancelable =
       SingleAssignCancelable.empty()
 
     const c = new TestCancelable()
     ref.update(c)
-    expect(c.isCanceled()).toBe(false)
+    assert.ok(!c.isCanceled())
 
     ref.cancel()
-    expect(c.isCanceled()).toBe(true)
-    expect(ref.isCanceled()).toBe(true)
+    assert.ok(c.isCanceled())
+    assert.ok(ref.isCanceled())
 
     ref.cancel()
-    expect(c.isCanceled()).toBe(true)
+    assert.ok(c.isCanceled())
   })
 
-  test("update after cancel", () => {
+  it("update after cancel", () => {
     const ref: SingleAssignCancelable =
       SingleAssignCancelable.empty()
 
     ref.cancel()
-    expect(ref.isCanceled()).toBe(true)
+    assert.ok(ref.isCanceled())
 
     const c1 = new TestCancelable()
     ref.update(c1)
-    expect(c1.isCanceled()).toBe(true)
+    assert.ok(c1.isCanceled())
 
     const c2 = new TestCancelable()
-    expect(() => ref.update(c2)).toThrowError()
+    assert.throws(() => ref.update(c2))
   })
 
-  test("update multiple times", () => {
+  it("update multiple times", () => {
     const ref: SingleAssignCancelable =
       SingleAssignCancelable.empty()
 
@@ -476,39 +478,39 @@ describe("SingleAssignmentCancelable", () => {
     ref.update(c1)
 
     const c2 = new TestCancelable()
-    expect(() => ref.update(c2)).toThrowError()
+    assert.throws(() => ref.update(c2))
     ref.cancel()
 
     const c3 = new TestCancelable()
-    expect(() => ref.update(c3)).toThrowError()
+    assert.throws(() => ref.update(c3))
 
-    expect(c1.isCanceled()).toBe(true)
-    expect(c2.isCanceled()).toBe(false)
-    expect(c3.isCanceled()).toBe(false)
+    assert.ok(c1.isCanceled())
+    assert.ok(!c2.isCanceled())
+    assert.ok(!c3.isCanceled())
     ref.cancel() // no-op
   })
 
-  test("from callback", () => {
+  it("from callback", () => {
     const ref: SingleAssignCancelable =
       SingleAssignCancelable.of(() => { effect += 1 })
 
     let effect = 0
     ref.cancel()
-    expect(effect).toBe(1)
+    assert.equal(effect, 1)
     ref.cancel() // no-op
-    expect(effect).toBe(1)
+    assert.equal(effect, 1)
   })
 
-  test("from callback, update", () => {
+  it("from callback, update", () => {
     let effect = 0
     const ref: SingleAssignCancelable =
       SingleAssignCancelable.of(() => { effect += 1 })
 
     const c = BoolCancelable.empty()
-    expect(() => ref.update(c)).toThrowError()
+    assert.throws(() => ref.update(c))
     ref.cancel()
 
-    expect(c.isCanceled()).toBe(false)
-    expect(effect).toBe(1)
+    assert.ok(!c.isCanceled())
+    assert.equal(effect, 1)
   })
 })

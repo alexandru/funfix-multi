@@ -17,6 +17,8 @@
 
 /* @flow */
 
+import type { Throwable } from "./errors"
+
 declare export class Either<+L, +R> {
   get(): R;
   getOrElse<RR>(fallback: RR): R | RR;
@@ -133,17 +135,17 @@ declare export class Try<+A> {
 
   isSuccess(): boolean;
   isFailure(): boolean;
-  failed(): Try<any>;
-  fold<R>(failure: (error: any) => R, success: (a: A) => R): R;
+  failed(): Try<Throwable>;
+  fold<R>(failure: (error: Throwable) => R, success: (a: A) => R): R;
   filter(p: (a: A) => boolean): Try<A>;
   flatMap<B>(f: (a: A) => Try<B>): Try<B>;
   chain<B>(f: (a: A) => Try<B>): Try<B>;
   map<B>(f: (a: A) => B): Try<B>;
   forEach(cb: (a: A) => void): void;
-  recover<AA>(f: (error: any) => AA): Try<A | AA>;
-  recoverWith<AA>(f: (error: any) => Try<AA>): Try<A | AA>;
+  recover<AA>(f: (error: Throwable) => AA): Try<A | AA>;
+  recoverWith<AA>(f: (error: Throwable) => Try<AA>): Try<A | AA>;
   toOption(): Option<A>;
-  toEither(): Either<any, A>;
+  toEither(): Either<Throwable, A>;
   equals(that: Try<A>): boolean;
   hashCode(): number;
 
@@ -158,7 +160,7 @@ declare export class Try<+A> {
   static pure<A>(value: A): Try<A>;
   static unit(): Try<void>;
   static success<A>(value: A): Try<A>;
-  static failure<A>(e: any): Try<A>;
+  static failure<A>(e: Throwable): Try<A>;
 
   static map2<A1,A2,R>(
     fa1: Try<A1>, fa2: Try<A2>,
@@ -180,4 +182,4 @@ declare export class Try<+A> {
 }
 
 declare export function Success<A>(value: A): Try<A>;
-declare export function Failure(e: any): Try<empty>;
+declare export function Failure(e: Throwable): Try<empty>;

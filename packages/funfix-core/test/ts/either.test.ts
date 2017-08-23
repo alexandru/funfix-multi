@@ -16,9 +16,7 @@
  */
 
 import * as jv from "jsverify"
-import * as assert from "assert"
-import { assertEqual, assertNotEqual } from "./common"
-
+import * as assert from "./asserts"
 import * as inst from "./instances"
 import { hashCode, is, Left, Right, Either, Option } from "../../src/"
 
@@ -50,7 +48,7 @@ describe("Either", () => {
 
   describe("Either #get", () => {
     it("works for right", () => {
-      assertEqual(Right(10).get(), 10)
+      assert.equal(Right(10).get(), 10)
     })
 
     it("works for left", () => {
@@ -260,15 +258,15 @@ describe("Either", () => {
       const opt2 = Either.right("hello1")
       const opt3 = Either.right("hello2")
 
-      assertEqual(opt1, opt2)
-      assertEqual(opt2, opt1)
+      assert.equal(opt1, opt2)
+      assert.equal(opt2, opt1)
 
-      assertNotEqual(opt1, opt3)
-      assertNotEqual(opt3, opt1)
+      assert.notEqual(opt1, opt3)
+      assert.notEqual(opt3, opt1)
 
-      assertEqual(Either.right(opt1), Either.right(opt2))
-      assertNotEqual(Either.right(opt1), Either.right(opt3))
-      assertNotEqual(Either.right<any,any>(opt1), Either.left(1))
+      assert.equal(Either.right(opt1), Either.right(opt2))
+      assert.notEqual(Either.right(opt1), Either.right(opt3))
+      assert.notEqual(Either.right<any,any>(opt1), Either.left(1))
     })
 
     jv.property("protects against other ref being null",
@@ -281,13 +279,13 @@ describe("Either", () => {
     it("works for right", () => {
       let effect = 0
       Right(10).forEach(() => effect = 10)
-      assertEqual(effect, 10)
+      assert.equal(effect, 10)
     })
 
     it("does nothing for left", () => {
       let effect = 0
       Left(10).forEach(() => effect = 10)
-      assertEqual(effect, 0)
+      assert.equal(effect, 0)
     })
   })
 
@@ -352,12 +350,12 @@ describe("Either", () => {
   describe("Either.tailRecM", () => {
     it("is stack safe", () => {
       const fa = Either.tailRecM(0, a => Right(a < 1000 ? Left(a + 1) : Right(a)))
-      assertEqual(fa.get(), 1000)
+      assert.equal(fa.get(), 1000)
     })
 
     it("Left interrupts the loop", () => {
       const fa = Either.tailRecM(0, a => Left("value"))
-      assertEqual(fa.swap().get(), "value")
+      assert.equal(fa.swap().get(), "value")
     })
   })
 })

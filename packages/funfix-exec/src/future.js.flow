@@ -17,6 +17,7 @@
 
 /* @flow */
 
+import type { Throwable } from "funfix-core"
 import { Option, Try, Either } from "funfix-core"
 import { Scheduler } from "./scheduler"
 import { ICancelable } from "./cancelable"
@@ -26,7 +27,7 @@ import { Duration } from "./time"
 // Flow 0.53 does not support a type more specific than this. You can also blame
 // the Promises/A+ spec for working with `Thenable<U> | U`.
 export interface IPromiseLike<+T> {
-  then(onFulfilled?: (value: T) => any, onRejected?: (error: any) => any): IPromiseLike<any>;
+  then(onFulfilled?: (value: T) => any, onRejected?: (error: Throwable) => any): IPromiseLike<any>;
 }
 
 declare export class Future<+A> {
@@ -35,14 +36,14 @@ declare export class Future<+A> {
   cancel(): void;
 
   withScheduler(ec: Scheduler): Future<A>;
-  transformWith<B>(failure: (e: any) => Future<B>, success: (a: A) => Future<B>): Future<B>;
-  transform<B>(failure: (e: any) => B, success: (a: A) => B): Future<B>;
-  attempt(): Future<Either<any, A>>;
+  transformWith<B>(failure: (e: Throwable) => Future<B>, success: (a: A) => Future<B>): Future<B>;
+  transform<B>(failure: (e: Throwable) => B, success: (a: A) => B): Future<B>;
+  attempt(): Future<Either<Throwable, A>>;
 
   flatMap<B>(f: (a: A) => Future<B>): Future<B>;
   map<B>(f: (a: A) => B): Future<B>;
-  recoverWith<AA>(f: (e: any) => Future<AA>): Future<A | AA>;
-  recover<AA>(f: (e: any) => AA): Future<A | AA>;
+  recoverWith<AA>(f: (e: Throwable) => Future<AA>): Future<A | AA>;
+  recover<AA>(f: (e: Throwable) => AA): Future<A | AA>;
   toPromise(): Promise<A>;
 
   delayResult(delay: number | Duration): Future<A>;
@@ -50,7 +51,7 @@ declare export class Future<+A> {
   timeout(after: number | Duration): Future<A>;
 
   // From IPromiseLike
-  then(onFulfilled?: (value: A) => any, onRejected?: (error: any) => any): Future<any>;
+  then(onFulfilled?: (value: A) => any, onRejected?: (error: Throwable) => any): Future<any>;
 
   +_funKindF: Future<any>;
   +_funKindA: A;
@@ -60,7 +61,7 @@ declare export class Future<+A> {
 
   static of<A>(thunk: () => A, ec?: Scheduler): Future<A>;
   static pure<A>(a: A, ec?: Scheduler): Future<A>;
-  static raise(e: any, ec?: Scheduler): Future<empty>;
+  static raise(e: Throwable, ec?: Scheduler): Future<empty>;
   static create<A>(register: (cb: (a: Try<A>) => void) => (ICancelable | void), ec?: Scheduler): Future<A>;
   static unit(): Future<void>;
   static delayedTick<A>(delay: number | Duration, ec?: Scheduler): Future<void>;

@@ -16,7 +16,7 @@
  */
 
 import * as std from "./std"
-import { NoSuchElementError } from "./errors"
+import { Throwable, NoSuchElementError } from "./errors"
 
 /**
  * Represents a value of one of two possible types (a disjoint union).
@@ -1037,19 +1037,21 @@ export function Some<A>(value: A): Option<A> {
   return new (Option as any)(value, false)
 }
 
+/** @Hidden */
+function emptyOptionRef() {
+  // Ugly workaround to get around the limitation of
+  // Option's private constructor
+  const F: any = Option
+  return new F(null, true) as Option<never>
+}
+
 /**
  * The `None` data constructor for [[Option]] represents non-existing
  * values for any type.
  *
  * Using this reference directly is equivalent with [[Option.none]].
  */
-export const None: Option<never> =
-  (function () {
-    // Ugly workaround to get around the limitation of
-    // Option's private constructor
-    const F: any = Option
-    return new F(null, true) as Option<never>
-  })()
+export const None: Option<never> = emptyOptionRef()
 
 /**
  * The `Try` type represents a computation that may either result in an
@@ -1100,9 +1102,9 @@ export const None: Option<never> =
 export class Try<A> implements std.IEquals<Try<A>> {
   private _isSuccess: boolean
   private _successRef: A
-  private _failureRef: any
+  private _failureRef: Throwable
 
-  private constructor(_success: A, _failure: any, _isSuccess: boolean) {
+  private constructor(_success: A, _failure: Throwable, _isSuccess: boolean) {
     this._isSuccess = _isSuccess
     if (_isSuccess) this._successRef = _success
     else this._failureRef = _failure
@@ -1214,7 +1216,7 @@ export class Try<A> implements std.IEquals<Try<A>> {
    * in a [[Success]]. If this is a `Success`, returns a `Failure` containing a
    * [[NoSuchElementError]].
    */
-  failed(): Try<any> {
+  failed(): Try<Throwable> {
     return this._isSuccess
       ? Failure(new NoSuchElementError("try.failed()"))
       : Success(this._failureRef)
@@ -1235,7 +1237,7 @@ export class Try<A> implements std.IEquals<Try<A>> {
    *   )
    * ```
    */
-  fold<R>(failure: (error: any) => R, success: (a: A) => R): R {
+  fold<R>(failure: (error: Throwable) => R, success: (a: A) => R): R {
     return this._isSuccess
       ? success(this._successRef)
       : failure(this._failureRef)
@@ -1336,7 +1338,7 @@ export class Try<A> implements std.IEquals<Try<A>> {
    * it still returns it as a `Failure(e)`.
    * ```
    */
-  recover<AA>(f: (error: any) => AA): Try<A | AA> {
+  recover<AA>(f: (error: Throwable) => AA): Try<A | AA> {
     return this._isSuccess ? this : Try.of(() => f(this._failureRef))
   }
 
@@ -1360,7 +1362,7 @@ export class Try<A> implements std.IEquals<Try<A>> {
    * it still returns it as a `Failure(e)`.
    * ```
    */
-  recoverWith<AA>(f: (error: any) => Try<AA>): Try<A | AA> {
+  recoverWith<AA>(f: (error: Throwable) => Try<AA>): Try<A | AA> {
     try {
       return this._isSuccess ? this : f(this._failureRef)
     } catch (e) {
@@ -1396,7 +1398,7 @@ export class Try<A> implements std.IEquals<Try<A>> {
    * Failure("error").toEither() // Left("error")
    * ```
    */
-  toEither(): Either<any, A> {
+  toEither(): Either<Throwable, A> {
     return this._isSuccess
       ? Right(this._successRef)
       : Left(this._failureRef)
@@ -1472,7 +1474,7 @@ export class Try<A> implements std.IEquals<Try<A>> {
    * Returns a [[Try]] reference that represents a failure
    * (i.e. an exception wrapped in [[Failure]]).
    */
-  static failure<A>(e: any): Try<A> {
+  static failure<A>(e: Throwable): Try<A> {
     return Failure(e)
   }
 
@@ -1744,7 +1746,7 @@ export function Success<A>(value: A): Try<A> {
  * The `Failure` data constructor is for building [[Try]] values that
  * represent failures, as opposed to [[Success]].
  */
-export function Failure(e: any): Try<never> {
+export function Failure(e: Throwable): Try<never> {
   return new (Try as any)(null as never, e, false)
 }
 

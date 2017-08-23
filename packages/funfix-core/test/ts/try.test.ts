@@ -17,8 +17,7 @@
 
 import * as jv from "jsverify"
 import * as inst from "./instances"
-import * as assert from "assert"
-import { assertEqual, assertNotEqual } from "./common"
+import * as assert from "./asserts"
 
 import { Try, Success, Failure, DummyError, NoSuchElementError } from "../../src/"
 import { None, Some, Left, Right } from "../../src/"
@@ -33,7 +32,7 @@ describe("Try.of", () => {
 
   it("should catch exceptions", () => {
     const error = new DummyError("dummy")
-    assertEqual(Try.of(() => { throw error }), Failure(error))
+    assert.equal(Try.of(() => { throw error }), Failure(error))
   })
 })
 
@@ -76,16 +75,16 @@ describe("Try #equals", () => {
     const fa3 = Success("hello2")
 
     assert.ok(!(fa1 === fa2))
-    assertEqual(fa1, fa2)
-    assertEqual(fa2, fa1)
+    assert.equal(fa1, fa2)
+    assert.equal(fa2, fa1)
 
     assert.ok(!(fa1.equals(fa3)))
-    assertNotEqual(fa1, fa3)
-    assertNotEqual(fa3, fa1)
+    assert.notEqual(fa1, fa3)
+    assert.notEqual(fa3, fa1)
 
-    assertEqual(Success(fa1), Success(fa2))
-    assertNotEqual(Success(fa1), Success(fa3))
-    assertNotEqual(Success(fa1), Success(Success("100")))
+    assert.equal(Success(fa1), Success(fa2))
+    assert.notEqual(Success(fa1), Success(fa3))
+    assert.notEqual(Success(fa1), Success(Success("100")))
   })
 
   it("Failure should have structural equality", () => {
@@ -94,16 +93,16 @@ describe("Try #equals", () => {
     const fa3 = Failure("hello2")
 
     assert.ok(!(fa1 === fa2))
-    assertEqual(fa1, fa2)
-    assertEqual(fa2, fa1)
+    assert.equal(fa1, fa2)
+    assert.equal(fa2, fa1)
 
     assert.ok(!(fa1.equals(fa3)))
-    assertNotEqual(fa1, fa3)
-    assertNotEqual(fa3, fa1)
+    assert.notEqual(fa1, fa3)
+    assert.notEqual(fa3, fa1)
 
-    assertEqual(Failure(fa1), Failure(fa2))
-    assertNotEqual(Failure(fa1), Failure(fa3))
-    assertNotEqual(Failure(fa1), Failure(Failure("100")))
+    assert.equal(Failure(fa1), Failure(fa2))
+    assert.notEqual(Failure(fa1), Failure(fa3))
+    assert.notEqual(Failure(fa1), Failure(Failure("100")))
   })
 
   jv.property("protects against other ref being null",
@@ -165,12 +164,12 @@ describe("Try #filter", () => {
 describe("Try #fold", () => {
   it("works for success", () => {
     const r = Success(1).fold(e => 0, a => a + 1)
-    assertEqual(r, 2)
+    assert.equal(r, 2)
   })
 
   it("works for failure", () => {
     const r = Failure(1).fold(e => 0, a => a)
-    assertEqual(r, 0)
+    assert.equal(r, 0)
   })
 })
 
@@ -236,7 +235,7 @@ describe("Try #forEach", () => {
   it("should work for success", () => {
     let effect = 0
     Success(10).forEach(a => { effect = a })
-    assertEqual(effect, 10)
+    assert.equal(effect, 10)
   })
 
   it("should do nothing for failure", () => {
@@ -320,7 +319,7 @@ describe("Try #recover", () => {
     const error2 = new DummyError("error2")
 
     const fa = Failure(error1).recover(_ => { throw error2 })
-    assertEqual(fa.failed().get(), error2)
+    assert.equal(fa.failed().get(), error2)
   })
 })
 
@@ -340,7 +339,7 @@ describe("Try #recoverWith", () => {
     const error2 = new DummyError("error2")
 
     const fa = Failure(error1).recoverWith(_ => { throw error2 })
-    assertEqual(fa.failed().get(), error2)
+    assert.equal(fa.failed().get(), error2)
   })
 })
 
@@ -429,7 +428,7 @@ describe("Try map2, map3, map4, map5, map6", () => {
     const received =
       Try.map2(fa, fa, _ => { throw dummy })
 
-    assertEqual(received, Failure(dummy))
+    assert.equal(received, Failure(dummy))
   })
 
   it("map3 protects against user error", () => {
@@ -438,7 +437,7 @@ describe("Try map2, map3, map4, map5, map6", () => {
     const received =
       Try.map3(fa, fa, fa, _ => { throw dummy })
 
-    assertEqual(received, Failure(dummy))
+    assert.equal(received, Failure(dummy))
   })
 
   it("map4 protects against user error", () => {
@@ -447,7 +446,7 @@ describe("Try map2, map3, map4, map5, map6", () => {
     const received =
       Try.map4(fa, fa, fa, fa, _ => { throw dummy })
 
-    assertEqual(received, Failure(dummy))
+    assert.equal(received, Failure(dummy))
   })
 
   it("map5 protects against user error", () => {
@@ -456,7 +455,7 @@ describe("Try map2, map3, map4, map5, map6", () => {
     const received =
       Try.map5(fa, fa, fa, fa, fa, _ => { throw dummy })
 
-    assertEqual(received, Failure(dummy))
+    assert.equal(received, Failure(dummy))
   })
 
   it("map6 protects against user error", () => {
@@ -465,7 +464,7 @@ describe("Try map2, map3, map4, map5, map6", () => {
     const received =
       Try.map6(fa, fa, fa, fa, fa, fa, _ => { throw dummy })
 
-    assertEqual(received, Failure(dummy))
+    assert.equal(received, Failure(dummy))
   })
 })
 
@@ -474,7 +473,7 @@ describe("Try.unit", () => {
     const e1 = Try.unit()
     const e2 = Try.unit()
 
-    assertEqual(e1, e2)
+    assert.equal(e1, e2)
     assert.equal(e1.get(), undefined)
   })
 })
@@ -482,17 +481,17 @@ describe("Try.unit", () => {
 describe("Try.tailRecM", () => {
   it("is stack safe", () => {
     const fa = Try.tailRecM(0, a => a < 1000 ? Success(Left(a + 1)) : Success(Right(a)))
-    assertEqual(fa.get(), 1000)
+    assert.equal(fa.get(), 1000)
   })
 
   it("returns the failure unchanged", () => {
     const fa = Try.tailRecM(0, a => Failure("failure"))
-    assertEqual(fa.failed().get(), "failure")
+    assert.equal(fa.failed().get(), "failure")
   })
 
   it("protects against user errors", () => {
     // tslint:disable:no-string-throw
     const fa = Try.tailRecM(0, a => { throw "dummy" })
-    assertEqual(fa.failed().get(), "dummy")
+    assert.equal(fa.failed().get(), "dummy")
   })
 })

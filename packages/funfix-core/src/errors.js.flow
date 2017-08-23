@@ -17,9 +17,11 @@
 
 /* @flow */
 
+export type Throwable = Error | mixed
+
 declare export class CompositeError extends Error {
-  constructor(errors: Array<any>): CompositeError;
-  errors(): Array<any>;
+  constructor(errors: Array<Throwable>): CompositeError;
+  errors(): Array<Throwable>;
 }
 
 declare export class DummyError extends Error {

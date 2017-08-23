@@ -16,13 +16,27 @@
  */
 
 /**
+ * Type alias for errors that can be thrown.
+ *
+ * Since in JavaScript any object can be thrown, the standard
+ * `Error` class (capital `E`) is not useful as a type in signatures,
+ * the needed type being effectively `any`, but we still need a type
+ * alias for documentation purposes.
+ *
+ * And since `any` represents an untyped object that bypasses the
+ * type system, Funfix is using `Object` for TypeScript and `mixed`
+ * for Flow to represent such throwables.
+ */
+export type Throwable = Error | Object
+
+/**
  * A composite error represents a list of errors that were caught
  * while executing logic which delays re-throwing of errors.
  */
 export class CompositeError extends Error {
-  private errorsRef: Array<any>
+  private errorsRef: Array<Throwable>
 
-  constructor(errors: Array<any>) {
+  constructor(errors: Array<Throwable>) {
     let reasons = ""
     for (const e of errors.slice(0, 2)) {
       let message = ""
@@ -50,7 +64,7 @@ export class CompositeError extends Error {
   /**
    * Returns the full list of caught errors.
    */
-  public errors(): Array<any> { return this.errorsRef.slice() }
+  public errors(): Array<Throwable> { return this.errorsRef.slice() }
 }
 
 /**

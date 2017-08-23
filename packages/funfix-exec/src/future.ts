@@ -17,7 +17,7 @@
 
 import {
   Try, Success, Failure, Option, Some, None, Either, Left, Right,
-  IllegalStateError, IllegalArgumentError, TimeoutError
+  IllegalStateError, IllegalArgumentError, TimeoutError, Throwable
 } from "funfix-core"
 
 import { Scheduler } from "./scheduler"
@@ -40,7 +40,7 @@ export interface IPromiseLike<T> {
    *
    * @returns A promise for the completion of which ever callback is executed.
    */
-  then(onFulfilled?: (value: T) => any, onRejected?: (reason: any) => any): IPromiseLike<any>
+  then(onFulfilled?: (value: T) => any, onRejected?: (reason: Throwable) => any): IPromiseLike<any>
 }
 
 /**
@@ -249,7 +249,7 @@ export abstract class Future<A> implements IPromiseLike<A>, ICancelable {
    * @param success is the function that's going to get executed in case the
    *        source signals a successful result
    */
-  abstract transformWith<B>(failure: (e: any) => Future<B>, success: (a: A) => Future<B>): Future<B>
+  abstract transformWith<B>(failure: (e: Throwable) => Future<B>, success: (a: A) => Future<B>): Future<B>
 
   /**
    * Transforms the sources, regardless if the result is a failure or a success.
@@ -265,7 +265,7 @@ export abstract class Future<A> implements IPromiseLike<A>, ICancelable {
    * import { Left, Right } from "funfix"
    *
    * // Expose errors by lifting them to an Either<Error, A>
-   * future.transform<Either<any, A>>(Left, Right)
+   * future.transform<Either<Throwable, A>>(Left, Right)
    * ```
    *
    * Also see {@link transformWith}.
@@ -276,7 +276,7 @@ export abstract class Future<A> implements IPromiseLike<A>, ICancelable {
    * @param success is the function that's going to get executed in case the
    *        source signals a successful result
    */
-  transform<B>(failure: (e: any) => B, success: (a: A) => B): Future<B> {
+  transform<B>(failure: (e: Throwable) => B, success: (a: A) => B): Future<B> {
     return this.transformWith(
       e => Future.pure(failure(e)),
       a => Future.pure(success(a)))
@@ -294,14 +294,14 @@ export abstract class Future<A> implements IPromiseLike<A>, ICancelable {
    * const f: Future<number> = Future.raise(new DummyError)
    *
    * // Yields a successful Left(DummyError) on completion
-   * const fe: Future<Either<any, number>> = f.attempt()
+   * const fe: Future<Either<Throwable, number>> = f.attempt()
    *
    * // Yields a Right(1) on completion
-   * const fr: Future<Either<any, number>> = Future.pure(1).attempt()
+   * const fr: Future<Either<Throwable, number>> = Future.pure(1).attempt()
    * ```
    */
-  attempt(): Future<Either<any, A>> {
-    return this.transform<Either<any, A>>(Left, Right)
+  attempt(): Future<Either<Throwable, A>> {
+    return this.transform<Either<Throwable, A>>(Left, Right)
   }
 
   /**
@@ -364,7 +364,7 @@ export abstract class Future<A> implements IPromiseLike<A>, ICancelable {
    * )
    * ```
    */
-  recoverWith<AA>(f: (e: any) => Future<AA>): Future<A | AA> {
+  recoverWith<AA>(f: (e: Throwable) => Future<AA>): Future<A | AA> {
     return this.transformWith<A | AA>(f, Future.pure)
   }
 
@@ -381,18 +381,18 @@ export abstract class Future<A> implements IPromiseLike<A>, ICancelable {
    * })
    * ```
    */
-  recover<AA>(f: (e: any) => AA): Future<A | AA> {
+  recover<AA>(f: (e: Throwable) => AA): Future<A | AA> {
     return this.transformWith<A | AA>(a => Future.pure(f(a)), Future.pure)
   }
 
   then<TResult1, TResult2>(
     onFulfilled?: ((value: A) => (IPromiseLike<TResult1> | TResult1)) | undefined | null,
-    onRejected?: ((reason: any) => (IPromiseLike<TResult2> | TResult2)) | undefined | null): Future<TResult2 | TResult1> {
+    onRejected?: ((reason: Throwable) => (IPromiseLike<TResult2> | TResult2)) | undefined | null): Future<TResult2 | TResult1> {
 
     if (!onFulfilled && !onRejected) return this as any
     return this.transformWith(
       promiseThen(onRejected, Future.raise),
-      promiseThen(onFulfilled, Future.pure))
+      promiseThen(onFulfilled, Future.pure)) as any
   }
 
   /**
@@ -554,7 +554,7 @@ export abstract class Future<A> implements IPromiseLike<A>, ICancelable {
    *        then {@link Scheduler.global} gets used, which also allows for
    *        local overrides, being a {@link DynamicRef}
    */
-  static raise(e: any, ec: Scheduler = Scheduler.global.get()): Future<never> {
+  static raise(e: Throwable, ec: Scheduler = Scheduler.global.get()): Future<never> {
     return new PureFuture(Failure(e), ec)
   }
 
@@ -1022,7 +1022,7 @@ class PureFuture<A> extends Future<A> {
     this._scheduler.trampoline(() => f(this._value))
   }
 
-  transformWith<B>(failure: (e: any) => Future<B>, success: (a: A) => Future<B>): Future<B> {
+  transformWith<B>(failure: (e: Throwable) => Future<B>, success: (a: A) => Future<B>): Future<B> {
     return genericTransformWith(this, failure, success, this._scheduler)
   }
 
@@ -1094,7 +1094,7 @@ class FutureBuilder<A> extends Future<A> {
       ec)
   }
 
-  transformWith<B>(failure: (e: any) => Future<B>, success: (a: A) => Future<B>): Future<B> {
+  transformWith<B>(failure: (e: Throwable) => Future<B>, success: (a: A) => Future<B>): Future<B> {
     return genericTransformWith(this, failure, success, this._scheduler, this._cancelable)
   }
 }
@@ -1107,7 +1107,7 @@ class FutureBuilder<A> extends Future<A> {
  */
 function genericTransformWith<A, B>(
   self: Future<A>,
-  failure: (e: any) => Future<B>,
+  failure: (e: Throwable) => Future<B>,
   success: (a: A) => Future<B>,
   scheduler: Scheduler,
   cancelable?: ICancelable): Future<B> {

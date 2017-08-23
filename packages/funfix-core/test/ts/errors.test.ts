@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 
-import * as assert from "assert"
-import { assertEqual, assertNotEqual } from "./common"
+import * as assert from "./asserts"
 
 import {
   DummyError,
@@ -33,8 +32,8 @@ describe("DummyError", () => {
   it("has custom message", () => {
     const ex = new DummyError("dummy")
 
-    assertEqual(ex.name, "DummyError")
-    assertEqual(ex.message, "dummy")
+    assert.equal(ex.name, "DummyError")
+    assert.equal(ex.message, "dummy")
   })
 })
 
@@ -43,10 +42,10 @@ describe("CompositeError", () => {
     const ex = () => new DummyError("dummy")
     const composite = new CompositeError(["simple", ex(), ex(), ex()])
 
-    assertEqual(composite.name, "CompositeError")
-    assertEqual(composite.message, "simple, DummyError(dummy), ...")
+    assert.equal(composite.name, "CompositeError")
+    assert.equal(composite.message, "simple, DummyError(dummy), ...")
 
-    assertEqual(composite.errors().length, 4)
+    assert.equal(composite.errors().length, 4)
     for (const e of composite.errors()) {
       assert.ok(e instanceof DummyError || typeof e === "string")
     }
@@ -56,10 +55,10 @@ describe("CompositeError", () => {
     const ex = () => new DummyError("dummy")
     const composite = new CompositeError([ex(), ex()])
 
-    assertEqual(composite.name, "CompositeError")
-    assertEqual(composite.message, "DummyError(dummy), DummyError(dummy)")
+    assert.equal(composite.name, "CompositeError")
+    assert.equal(composite.message, "DummyError(dummy), DummyError(dummy)")
 
-    assertEqual(composite.errors().length, 2)
+    assert.equal(composite.errors().length, 2)
     for (const e of composite.errors()) {
       assert.ok(e instanceof DummyError)
     }
@@ -68,9 +67,9 @@ describe("CompositeError", () => {
   it("has custom message for empty array", () => {
     const composite = new CompositeError([])
 
-    assertEqual(composite.name, "CompositeError")
-    assertEqual(composite.message, "")
-    assertEqual(composite.errors().length, 0)
+    assert.equal(composite.name, "CompositeError")
+    assert.equal(composite.message, "")
+    assert.equal(composite.errors().length, 0)
   })
 })
 
@@ -78,8 +77,8 @@ describe("IllegalStateError", () => {
   it("has custom message", () => {
     const ex = new IllegalStateError("dummy")
 
-    assertEqual(ex.name, "IllegalStateError")
-    assertEqual(ex.message, "dummy")
+    assert.equal(ex.name, "IllegalStateError")
+    assert.equal(ex.message, "dummy")
   })
 })
 
@@ -87,8 +86,8 @@ describe("IllegalInheritanceError", () => {
   it("has custom message", () => {
     const ex = new IllegalInheritanceError("dummy")
 
-    assertEqual(ex.name, "IllegalInheritanceError")
-    assertEqual(ex.message, "dummy")
+    assert.equal(ex.name, "IllegalInheritanceError")
+    assert.equal(ex.message, "dummy")
   })
 })
 
@@ -96,8 +95,8 @@ describe("NoSuchElementError", () => {
   it("has custom message", () => {
     const ex = new NoSuchElementError("dummy")
 
-    assertEqual(ex.name, "NoSuchElementError")
-    assertEqual(ex.message, "dummy")
+    assert.equal(ex.name, "NoSuchElementError")
+    assert.equal(ex.message, "dummy")
   })
 })
 
@@ -105,8 +104,8 @@ describe("IllegalArgumentError", () => {
   it("has custom message", () => {
     const ex = new IllegalArgumentError("dummy")
 
-    assertEqual(ex.name, "IllegalArgumentError")
-    assertEqual(ex.message, "dummy")
+    assert.equal(ex.name, "IllegalArgumentError")
+    assert.equal(ex.message, "dummy")
   })
 })
 
@@ -114,8 +113,8 @@ describe("NotImplementedError", () => {
   it("has custom message", () => {
     const ex = new NotImplementedError("dummy")
 
-    assertEqual(ex.name, "NotImplementedError")
-    assertEqual(ex.message, "dummy")
+    assert.equal(ex.name, "NotImplementedError")
+    assert.equal(ex.message, "dummy")
   })
 })
 
@@ -123,7 +122,7 @@ describe("TimeoutError", () => {
   it("has custom message", () => {
     const ex = new TimeoutError("dummy")
 
-    assertEqual(ex.name, "TimeoutError")
-    assertEqual(ex.message, "dummy")
+    assert.equal(ex.name, "TimeoutError")
+    assert.equal(ex.message, "dummy")
   })
 })

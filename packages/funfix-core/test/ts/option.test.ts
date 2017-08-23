@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 
-import * as assert from "assert"
 import * as jv from "jsverify"
 import * as inst from "./instances"
-import { assertEqual, assertNotEqual } from "./common"
+import * as assert from "./asserts"
 
 import { Option, Some, None, Left, Right } from "../../src/"
 import { NoSuchElementError } from "../../src/"
@@ -28,9 +27,9 @@ describe("Option", () => {
   describe("constructor", () => {
     it("of(value) <-> new Option(value, isEmpty=null)", () => {
       const F = Option as any
-      assertEqual(new F("value"), Option.some("value"))
-      assertEqual(new F(null), Option.none())
-      assertEqual(new F(undefined), Option.none())
+      assert.equal(new F("value"), Option.some("value"))
+      assert.equal(new F(null), Option.none())
+      assert.equal(new F(undefined), Option.none())
     })
   })
 
@@ -62,8 +61,8 @@ describe("Option", () => {
     )
 
     it("should fallback in case the option is empty", () => {
-      assertEqual(Option.empty<number>().getOrElse(100), 100)
-      assertEqual(Option.empty<number>().getOrElseL(() => 100), 100)
+      assert.equal(Option.empty<number>().getOrElse(100), 100)
+      assert.equal(Option.empty<number>().getOrElseL(() => 100), 100)
     })
 
     it("should not evaluate getOrElseL if nonempty", () => {
@@ -73,16 +72,16 @@ describe("Option", () => {
         return "default"
       })
 
-      assertEqual(effect, 10)
-      assertEqual(r, "hello")
+      assert.equal(effect, 10)
+      assert.equal(r, "hello")
     })
 
     it("can fallback to unrelated type", () => {
       const opt = Option.empty<number>()
       const r1: number | string = opt.getOrElse("fallback")
-      assertEqual(r1, "fallback")
+      assert.equal(r1, "fallback")
       const r2: number | string = opt.getOrElseL(() => "fallback")
-      assertEqual(r2, "fallback")
+      assert.equal(r2, "fallback")
     })
   })
 
@@ -93,7 +92,7 @@ describe("Option", () => {
     )
 
     it("should return null in case the option is empty", () => {
-      assertEqual(Option.empty<number>().orNull(), null)
+      assert.equal(Option.empty<number>().orNull(), null)
     })
   })
 
@@ -105,13 +104,13 @@ describe("Option", () => {
 
     it("works as a fallback if the source is empty", () => {
       const other = Option.of(1000)
-      assertEqual(Option.empty<number>().orElse(other), other)
+      assert.equal(Option.empty<number>().orElse(other), other)
     })
 
     it("can fallback to unrelated type", () => {
       const opt = Option.empty<number>()
       const r: Option<number | string> = opt.orElse(Some("fallback"))
-      assertEqual(r.get(), "fallback")
+      assert.equal(r.get(), "fallback")
     })
   })
 
@@ -137,16 +136,16 @@ describe("Option", () => {
     it("can fallback to unrelated type", () => {
       const opt = Option.empty<number>()
       const r: Option<number | string> = opt.orElseL(() => Some("fallback"))
-      assertEqual(r.get(), "fallback")
+      assert.equal(r.get(), "fallback")
     })
   })
 
   describe("#isEmpty, #nonEmpty", () => {
     it("should signal isEmpty=true when empty", () => {
-      assertEqual(None.isEmpty(), true)
-      assertEqual(None.nonEmpty(), false)
-      assertEqual(Option.empty().isEmpty(), true)
-      assertEqual(Option.empty().nonEmpty(), false)
+      assert.equal(None.isEmpty(), true)
+      assert.equal(None.nonEmpty(), false)
+      assert.equal(Option.empty().isEmpty(), true)
+      assert.equal(Option.empty().nonEmpty(), false)
     })
 
     jv.property("should signal nonEmpty when non-empty",
@@ -182,8 +181,8 @@ describe("Option", () => {
     )
 
     it("should do hashCode for none() and some(null)", () => {
-      assertEqual(hashCode(Option.none()), 2433880)
-      assertEqual(hashCode(Option.some(null)), 2433881 << 2)
+      assert.equal(hashCode(Option.none()), 2433880)
+      assert.equal(hashCode(Option.some(null)), 2433881 << 2)
     })
 
     it("should have structural equality", () => {
@@ -192,16 +191,16 @@ describe("Option", () => {
       const opt3 = Some("hello2")
 
       assert.ok(opt1 !== opt2)
-      assertEqual(opt1, opt2)
-      assertEqual(opt2, opt1)
+      assert.equal(opt1, opt2)
+      assert.equal(opt2, opt1)
 
       assert.ok(!opt1.equals(opt3))
-      assertNotEqual(opt1, opt3)
-      assertNotEqual(opt3, opt1)
+      assert.notEqual(opt1, opt3)
+      assert.notEqual(opt3, opt1)
 
-      assertEqual(Some(opt1), Some(opt2))
-      assertNotEqual(Some(opt1), Some(opt3))
-      assertNotEqual(Some(opt1), Some(None))
+      assert.equal(Some(opt1), Some(opt2))
+      assert.notEqual(Some(opt1), Some(opt3))
+      assert.notEqual(Some(opt1), Some(None))
     })
 
     jv.property("protects against other ref being null",
@@ -299,19 +298,19 @@ describe("Option", () => {
   describe("#fold", () => {
     it("works for empty", () => {
       const x = Option.empty<number>().fold(() => 10, a => a)
-      assertEqual(x, 10)
+      assert.equal(x, 10)
     })
 
     it("works for nonempty", () => {
       const x = Some(100).fold(() => 10, a => a)
-      assertEqual(x, 100)
+      assert.equal(x, 100)
     })
   })
 
   describe("#contains", () => {
     it("works for empty", () => {
       const x = Option.empty<number>().contains(10)
-      assertEqual(x, false)
+      assert.equal(x, false)
     })
 
     it("works for primitive", () => {
@@ -328,28 +327,28 @@ describe("Option", () => {
   describe("#exists", () => {
     it("works for empty", () => {
       const x = Option.empty<number>().exists(a => true)
-      assertEqual(x, false)
+      assert.equal(x, false)
     })
 
     it("works for nonempty", () => {
       const x1 = Some(10).exists(a => a % 2 === 0)
-      assertEqual(x1, true)
+      assert.equal(x1, true)
       const x2 = Some(10).exists(a => a % 2 !== 0)
-      assertEqual(x2, false)
+      assert.equal(x2, false)
     })
   })
 
   describe("#forAll", () => {
     it("works for empty", () => {
       const x = Option.empty<number>().forAll(a => true)
-      assertEqual(x, true)
+      assert.equal(x, true)
     })
 
     it("works for nonempty", () => {
       const x1 = Some(10).forAll(a => a % 2 === 0)
-      assertEqual(x1, true)
+      assert.equal(x1, true)
       const x2 = Some(10).forAll(a => a % 2 !== 0)
-      assertEqual(x2, false)
+      assert.equal(x2, false)
     })
   })
 
@@ -357,20 +356,20 @@ describe("Option", () => {
     it("works for empty", () => {
       let sum = 0
       Option.empty<number>().forEach(x => sum += x)
-      assertEqual(sum, 0)
+      assert.equal(sum, 0)
     })
 
     it("works for nonempty", () => {
       let sum = 0
       Some(10).forEach(x => sum += x)
       Some(10).forEach(x => sum += x)
-      assertEqual(sum, 20)
+      assert.equal(sum, 20)
     })
   })
 
   describe("pure", () => {
     it("is an alias for some", () => {
-      assertEqual(Some(10), Option.pure(10))
+      assert.equal(Some(10), Option.pure(10))
     })
   })
 
@@ -381,7 +380,7 @@ describe("Option", () => {
     )
 
     it("None == None", () => {
-      assertEqual(None, None)
+      assert.equal(None, None)
     })
   })
 
@@ -447,31 +446,31 @@ describe("Option", () => {
     it("works", () => {
       const str: string | null = "hello"
       const opt: Option<string> = Option.of(str)
-      assertEqual(opt, Some("hello"))
+      assert.equal(opt, Some("hello"))
     })
 
     it("type-checks for null", () => {
       const str: string | null = null
       const opt = Option.of(str)
-      assertEqual(opt, None)
+      assert.equal(opt, None)
     })
 
     it("type-checks for undefined", () => {
       const str: string | undefined = undefined
       const opt = Option.of(str)
-      assertEqual(opt, None)
+      assert.equal(opt, None)
     })
   })
 
   describe("tailRecM", () => {
     it("is stack safe", () => {
       const fa = Option.tailRecM(0, a => Some(a < 1000 ? Left(a + 1) : Right(a)))
-      assertEqual(fa.get(), 1000)
+      assert.equal(fa.get(), 1000)
     })
 
     it("None interrupts the loop", () => {
       const fa = Option.tailRecM(0, a => None)
-      assertEqual(fa, None)
+      assert.equal(fa, None)
     })
   })
 })

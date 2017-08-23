@@ -15,13 +15,29 @@
  * limitations under the License.
  */
 
-import * as assert from "assert"
-import { is } from "../../src/"
+import * as fns from "assert"
+import { is } from "funfix-core"
 
-export function assertEqual<A>(lh: A, rh: A): void {
-  assert.ok(is(lh, rh), `${lh} == ${rh}`)
+export function ok(cond: boolean, message?: string): void {
+  return fns.ok(cond, message)
 }
 
-export function assertNotEqual<A>(lh: A, rh: A): void {
-  assert.ok(!is(lh, rh), `${lh} == ${rh}`)
+export function not(cond: boolean, message?: string): void {
+  return fns.ok(!cond, message)
+}
+
+export function throws(thunk: () => any, message?: string): void {
+  return fns.throws(thunk, message)
+}
+
+export function equal<A>(lh: A, rh: A): void {
+  return fns.ok(is(lh, rh), `${lh} == ${rh}`)
+}
+
+export function notEqual<A>(lh: A, rh: A): void {
+  return fns.ok(!is(lh, rh), `${lh} != ${rh}`)
+}
+
+export function fail(message: string): void {
+    return fns.fail(message)
 }

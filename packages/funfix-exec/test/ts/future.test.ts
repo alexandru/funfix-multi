@@ -15,23 +15,24 @@
  * limitations under the License.
  */
 
+import * as assert from "./asserts"
 import { is, Try, Success, Failure, Some, None, DummyError, Left, Right, IllegalStateError, TimeoutError, IllegalArgumentError } from "funfix-core"
 import { Future, IPromiseLike, TestScheduler, Scheduler, BoolCancelable, Cancelable, Duration } from "../../src/"
 
 describe("PureFuture", () => {
-  test("pure", () => {
+  it("pure", () => {
     const s = new TestScheduler()
     const f = Future.pure(10, s)
 
-    expect(is(f.value(), Some(Success(10)))).toBe(true)
+    assert.equal(f.value(), Some(Success(10)))
 
     let result = 0
     f.cancel() // no-op
     f.onComplete(a => { result = a.get() })
-    expect(result).toBe(10)
+    assert.equal(result, 10)
   })
 
-  test("pure.onComplete protects against user error", () => {
+  it("pure.onComplete protects against user error", () => {
     let thrownErr: any = null
     const s = new TestScheduler(err => { thrownErr = err })
 
@@ -39,138 +40,136 @@ describe("PureFuture", () => {
     const dummy = new DummyError("dummy")
     f.onComplete(_ => { throw dummy })
 
-    expect(thrownErr).toBe(dummy)
+    assert.equal(thrownErr, dummy)
   })
 
-  test("pure.map", () => {
+  it("pure.map", () => {
     const s = new TestScheduler()
     const f = Future.pure(10, s).map(_ => _ * 2)
 
-    expect(is(f.value(), Some(Success(20)))).toBe(true)
+    assert.equal(f.value(), Some(Success(20)))
 
     let result = 0
     f.onComplete(a => { result = a.get() })
-    expect(result).toBe(20)
+    assert.equal(result, 20)
   })
 
-  test("pure.map protects against user errors", () => {
+  it("pure.map protects against user errors", () => {
     const dummy = new DummyError("dummy")
     const f = Future.pure(1).map(_ => { throw dummy })
 
-    expect(is(f.value(), Some(Failure(dummy)))).toBe(true)
+    assert.equal(f.value(), Some(Failure(dummy)))
   })
 
-  test("pure.flatMap", () => {
+  it("pure.flatMap", () => {
     const s = new TestScheduler()
     const f = Future.pure(10, s).flatMap(_ => Future.pure(_ * 2))
 
-    expect(is(f.value(), Some(Success(20)))).toBe(true)
+    assert.equal(f.value(), Some(Success(20)))
 
     let result = 0
     f.onComplete(a => { result = a.get() })
-    expect(result).toBe(20)
+    assert.equal(result, 20)
   })
 
-  test("pure.flatMap is stack safe in recursive loop", () => {
-    const loop = (n: number) => {
+  it("pure.flatMap is stack safe in recursive loop", () => {
+    function loop(n: number): Future<number> {
       if (n <= 0) return Future.pure(n)
       return Future.pure(n).flatMap(x => loop(x - 1))
     }
 
-    expect(is(loop(10000).value(), Some(Success(0)))).toBe(true)
+    assert.equal(loop(10000).value(), Some(Success(0)))
   })
 
-  test("pure.flatMap protects against user errors", () => {
+  it("pure.flatMap protects against user errors", () => {
     const dummy = new DummyError("dummy")
     const f = Future.pure(1).flatMap(_ => { throw dummy })
 
-    expect(is(f.value(), Some(Failure(dummy)))).toBe(true)
+    assert.equal(f.value(), Some(Failure(dummy)))
   })
 
-  test("pure.attempt", () => {
+  it("pure.attempt", () => {
     const f = Future.pure(1).attempt()
-    expect(is(f.value(), Some(Success(Right(1))))).toBe(true)
+    assert.equal(f.value(), Some(Success(Right(1))))
   })
 
-  test("raise(err).map <-> raise(err)", () => {
+  it("raise(err).map <-> raise(err)", () => {
     const dummy = new DummyError("dummy")
     const f = (Future.raise(dummy) as Future<number>).map(_ => _ + 1)
 
-    expect(is(f.value(), Some(Failure(dummy)))).toBe(true)
+    assert.equal(f.value(), Some(Failure(dummy)))
   })
 
-  test("raise(err).flatMap <-> raise(err)", () => {
+  it("raise(err).flatMap <-> raise(err)", () => {
     const dummy = new DummyError("dummy")
     const f = (Future.raise(dummy) as Future<number>).flatMap(_ => Future.pure(_ + 1))
 
-    expect(is(f.value(), Some(Failure(dummy)))).toBe(true)
+    assert.equal(f.value(), Some(Failure(dummy)))
   })
 
-  test("raise.recover", () => {
+  it("raise.recover", () => {
     const dummy = new DummyError("dummy")
-    const f: Future<string> = Future.raise(dummy).recover(ex => ex.message)
-
-    expect(is(f.value(), Some(Success("dummy")))).toBe(true)
+    const f: Future<string> = Future.raise(dummy).recover(ex => (ex as any).message)
+    assert.equal(f.value(), Some(Success("dummy")))
   })
 
-  test("raise.recover protects against user error", () => {
+  it("raise.recover protects against user error", () => {
     const dummy = new DummyError("dummy")
     const dummy2 = new DummyError("dummy2")
     const f: Future<string> = Future.raise(dummy).recover(ex => { throw dummy2 })
 
-    expect(is(f.value(), Some(Failure(dummy2)))).toBe(true)
+    assert.equal(f.value(), Some(Failure(dummy2)))
   })
 
-  test("raise.recoverWith", () => {
+  it("raise.recoverWith", () => {
     const dummy = new DummyError("dummy")
-    const f: Future<string> = Future.raise(dummy).recoverWith(ex => Future.pure(ex.message))
+    const f: Future<string> = Future.raise(dummy).recoverWith(ex => Future.pure((ex as any).message))
 
-    expect(is(f.value(), Some(Success("dummy")))).toBe(true)
+    assert.equal(f.value(), Some(Success("dummy")))
   })
 
-  test("raise.recoverWith protects against user error", () => {
+  it("raise.recoverWith protects against user error", () => {
     const dummy = new DummyError("dummy")
     const dummy2 = new DummyError("dummy2")
-    const f: Future<string> = Future.raise<string>(dummy).recoverWith(ex => { throw dummy2 })
-
-    expect(is(f.value(), Some(Failure(dummy2)))).toBe(true)
+    const f = Future.raise(dummy).recoverWith(_ => { throw dummy2 })
+    assert.equal(f.value(), Some(Failure(dummy2)))
   })
 
-  test("raise.attempt", () => {
+  it("raise.attempt", () => {
     const dummy = new DummyError("dummy")
     const f = Future.raise(dummy).attempt()
-    expect(is(f.value(), Some(Success(Left(dummy))))).toBe(true)
+    assert.equal(f.value(), Some(Success(Left(dummy))))
   })
 
-  test("pure(x).flatMap(f) yields cancelable future", () => {
+  it("pure(x).flatMap(f) yields cancelable future", () => {
     const c = BoolCancelable.empty()
     const never = Future.create(_ => c)
     const f = Future.pure(1).flatMap(x => never)
 
-    expect(f.value().isEmpty()).toBe(true)
-    expect(c.isCanceled()).toBe(false)
+    assert.ok(f.value().isEmpty())
+    assert.equal(c.isCanceled(), false)
 
     f.cancel()
-    expect(c.isCanceled()).toBe(true)
-    expect(f.value().isEmpty()).toBe(true)
+    assert.ok(c.isCanceled())
+    assert.ok(f.value().isEmpty())
     f.cancel() // no-op
   })
 
-  test("raise(x).recoverWith(f) yields cancelable future", () => {
+  it("raise(x).recoverWith(f) yields cancelable future", () => {
     const c = BoolCancelable.empty()
     const never = Future.create(_ => c)
     const f = Future.raise(new DummyError()).recoverWith(_ => never)
 
-    expect(f.value().isEmpty()).toBe(true)
-    expect(c.isCanceled()).toBe(false)
+    assert.ok(f.value().isEmpty())
+    assert.equal(c.isCanceled(), false)
 
     f.cancel()
-    expect(c.isCanceled()).toBe(true)
-    expect(f.value().isEmpty()).toBe(true)
+    assert.ok(c.isCanceled())
+    assert.ok(f.value().isEmpty())
     f.cancel() // no-op
   })
 
-  test("pure.withScheduler", () => {
+  it("pure.withScheduler", () => {
     const s1 = new TestScheduler()
     s1.trampoline = s1.executeAsync
     const s2 = new TestScheduler()
@@ -180,46 +179,46 @@ describe("PureFuture", () => {
       .withScheduler(s2)
       .map(x => x + 1)
 
-    expect(f.value()).toBe(None)
+    assert.equal(f.value(), None)
     s1.tick()
-    expect(f.value()).toBe(None)
+    assert.equal(f.value(), None)
     s2.tick()
 
-    expect(is(f.value(), Some(Success(2)))).toBe(true)
+    assert.equal(f.value(), Some(Success(2)))
   })
 
-  test("pure(?, ec).withScheduler(ec) yields the same reference", () => {
+  it("pure(?, ec).withScheduler(ec) yields the same reference", () => {
     const s1 = new TestScheduler()
     const s2 = new TestScheduler()
     const fa = Future.pure(1, s1)
 
-    expect(fa.withScheduler(s1)).toBe(fa)
-    expect(fa.withScheduler(s2) !== fa).toBeTruthy()
+    assert.equal(fa.withScheduler(s1), fa)
+    assert.ok(fa.withScheduler(s2) !== fa)
   })
 
-  test("unit() always yields the same reference", () => {
-    expect(Future.unit()).toBe(Future.unit())
+  it("unit() always yields the same reference", () => {
+    assert.equal(Future.unit(), Future.unit())
   })
 
-  test("unit() yields undefined", () => {
-    expect(is(Future.unit().value(), Some(Success(undefined)))).toBeTruthy()
+  it("unit() yields undefined", () => {
+    assert.ok(is(Future.unit().value(), Some(Success(undefined))))
   })
 })
 
 describe("FutureBuilder", () => {
-  test("Future.of(f)", () => {
+  it("Future.of(f)", () => {
     const s = new TestScheduler()
     const f = Future.of(() => 10, s)
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Success(10)))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Success(10)))
 
     let result = 0
     f.onComplete(a => { result = a.get() })
-    expect(result).toBe(10)
+    assert.equal(result, 10)
   })
 
-  test("Future.of(f).onComplete protects against user error", () => {
+  it("Future.of(f).onComplete protects against user error", () => {
     let thrownErr: any = null
     const s = new TestScheduler(err => { thrownErr = err })
 
@@ -228,150 +227,150 @@ describe("FutureBuilder", () => {
     f.onComplete(_ => { throw dummy })
 
     s.tick()
-    expect(thrownErr).toBe(dummy)
+    assert.equal(thrownErr, dummy)
   })
 
-  test("Future.of(f) protects against user errors", () => {
+  it("Future.of(f) protects against user errors", () => {
     const s = new TestScheduler()
     const dummy = new DummyError("dummy")
     const f = Future.of(() => { throw dummy }, s)
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Failure(dummy)))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Failure(dummy)))
   })
 
-  test("Future.of(f).map", () => {
+  it("Future.of(f).map", () => {
     const s = new TestScheduler()
     const f = Future.of(() => 10, s).map(_ => _ * 2)
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Success(20)))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Success(20)))
 
     let result = 0
     f.onComplete(a => { result = a.get() })
-    expect(result).toBe(20)
+    assert.equal(result, 20)
   })
 
-  test("Future.of(f).map protects against user errors", () => {
+  it("Future.of(f).map protects against user errors", () => {
     const s = new TestScheduler()
     const dummy = new DummyError("dummy")
     const f = Future.of(() => 1, s).map(_ => { throw dummy })
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Failure(dummy)))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Failure(dummy)))
   })
 
-  test("Future.of(f).flatMap", () => {
+  it("Future.of(f).flatMap", () => {
     const s = new TestScheduler()
     const f = Future.of(() => 10, s).flatMap(_ => Future.pure(_ * 2))
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Success(20)))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Success(20)))
 
     let result = 0
     f.onComplete(a => { result = a.get() })
-    expect(result).toBe(20)
+    assert.equal(result, 20)
   })
 
-  test("Future.of(f).flatMap is stack safe in recursive loop", () => {
+  it("Future.of(f).flatMap is stack safe in recursive loop", () => {
     const s = new TestScheduler()
 
-    const loop = (n: number) => {
+    function loop(n: number): Future<number> {
       if (n <= 0) return Future.pure(n, s)
       return Future.of(() => n, s).flatMap(x => loop(x - 1))
     }
 
     const f = loop(10000)
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Success(0)))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Success(0)))
   })
 
-  test("Future.of(f).flatMap protects against user errors", () => {
+  it("Future.of(f).flatMap protects against user errors", () => {
     const s = new TestScheduler()
     const dummy = new DummyError("dummy")
     const f = Future.of(() => 1, s).flatMap(_ => { throw dummy })
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Failure(dummy)))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Failure(dummy)))
   })
 
-  test("Future.of(f).attempt", () => {
+  it("Future.of(f).attempt", () => {
     const s = new TestScheduler()
     const f = Future.of(() => 1, s).attempt()
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Success(Right(1))))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Success(Right(1))))
   })
 
-  test("Future.of(throw err).map <-> raise(err)", () => {
+  it("Future.of(throw err).map <-> raise(err)", () => {
     const s = new TestScheduler()
     const dummy = new DummyError("dummy")
     const f = Future.of<number>(() => { throw dummy }, s).map(_ => _ + 1)
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Failure(dummy)))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Failure(dummy)))
   })
 
-  test("Future.of(throw err).flatMap <-> raise(err)", () => {
+  it("Future.of(throw err).flatMap <-> raise(err)", () => {
     const s = new TestScheduler()
     const dummy = new DummyError("dummy")
     const f = Future.of<number>(() => { throw dummy }, s).flatMap(_ => Future.pure(_ + 1))
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Failure(dummy)))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Failure(dummy)))
   })
 
-  test("Future.of(throw err).recover", () => {
+  it("Future.of(throw err).recover", () => {
     const s = new TestScheduler()
     const dummy = new DummyError("dummy")
-    const f: Future<string> = Future.of(() => { throw dummy }, s).recover(ex => ex.message)
+    const f: Future<string> = Future.of(() => { throw dummy }, s).recover(ex => (ex as any).message)
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Success("dummy")))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Success("dummy")))
   })
 
-  test("Future.of(throw err).recover protects against user error", () => {
+  it("Future.of(throw err).recover protects against user error", () => {
     const s = new TestScheduler()
 
     const dummy = new DummyError("dummy")
     const dummy2 = new DummyError("dummy2")
     const f: Future<string> = Future.of(() => { throw dummy }, s).recover(ex => { throw dummy2 })
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Failure(dummy2)))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Failure(dummy2)))
   })
 
-  test("Future.of(throw err).recoverWith", () => {
+  it("Future.of(throw err).recoverWith", () => {
     const s = new TestScheduler()
     const dummy = new DummyError("dummy")
-    const f: Future<string> = Future.of(() => { throw dummy }, s).recoverWith(ex => Future.pure(ex.message))
+    const f: Future<string> = Future.of(() => { throw dummy }, s).recoverWith(ex => Future.pure((ex as any).message))
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Success("dummy")))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Success("dummy")))
   })
 
-  test("Future.of(throw err).recoverWith protects against user error", () => {
+  it("Future.of(throw err).recoverWith protects against user error", () => {
     const s = new TestScheduler()
 
     const dummy = new DummyError("dummy")
     const dummy2 = new DummyError("dummy2")
     const f: Future<string> = Future.of(() => { throw dummy }, s).recoverWith(ex => { throw dummy2 })
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Failure(dummy2)))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Failure(dummy2)))
   })
 
-  test("Future.of(throw err).attempt", () => {
+  it("Future.of(throw err).attempt", () => {
     const s = new TestScheduler()
 
     const dummy = new DummyError("dummy")
     const f = Future.of(() => { throw dummy }, s).attempt()
 
-    expect(f.value()).toBe(None); s.tick()
-    expect(is(f.value(), Some(Success(Left(dummy))))).toBe(true)
+    assert.equal(f.value(), None); s.tick()
+    assert.equal(f.value(), Some(Success(Left(dummy))))
   })
 
-  test("Future.of(x).flatMap(f) yields cancelable future", () => {
+  it("Future.of(x).flatMap(f) yields cancelable future", () => {
     const s = new TestScheduler()
 
     Scheduler.global.bind(s, () => {
@@ -384,20 +383,20 @@ describe("FutureBuilder", () => {
         .flatMap(_ => Future.pure(_))
         .flatMap(_ => never)
 
-      expect(effect).toBe(0); s.tick()
-      expect(effect).toBe(1)
+      assert.equal(effect, 0); s.tick()
+      assert.equal(effect, 1)
 
-      expect(f.value().isEmpty()).toBe(true)
-      expect(c.isCanceled()).toBe(false)
+      assert.ok(f.value().isEmpty())
+      assert.equal(c.isCanceled(), false)
 
       f.cancel()
-      expect(c.isCanceled()).toBe(true)
-      expect(f.value().isEmpty()).toBe(true)
+      assert.ok(c.isCanceled())
+      assert.ok(f.value().isEmpty())
       f.cancel() // no-op
     })
   })
 
-  test("raise(x).recoverWith(f) yields cancelable future", () => {
+  it("raise(x).recoverWith(f) yields cancelable future", () => {
     const s = new TestScheduler()
 
     Scheduler.global.bind(s, () => {
@@ -407,20 +406,20 @@ describe("FutureBuilder", () => {
       let effect = 0
       const f = Future.of(() => { effect += 1; throw new DummyError() }).recoverWith(_ => never)
 
-      expect(effect).toBe(0); s.tick()
-      expect(effect).toBe(1)
+      assert.equal(effect, 0); s.tick()
+      assert.equal(effect, 1)
 
-      expect(f.value().isEmpty()).toBe(true)
-      expect(c.isCanceled()).toBe(false)
+      assert.ok(f.value().isEmpty())
+      assert.equal(c.isCanceled(), false)
 
       f.cancel()
-      expect(c.isCanceled()).toBe(true)
-      expect(f.value().isEmpty()).toBe(true)
+      assert.ok(c.isCanceled())
+      assert.ok(f.value().isEmpty())
       f.cancel() // no-op
     })
   })
 
-  test("Future.of(f).withScheduler", () => {
+  it("Future.of(f).withScheduler", () => {
     const s1 = new TestScheduler()
     const s2 = new TestScheduler()
     s2.trampoline = s2.executeAsync
@@ -429,24 +428,24 @@ describe("FutureBuilder", () => {
       .withScheduler(s2)
       .map(x => x + 1)
 
-    expect(f.value()).toBe(None)
+    assert.equal(f.value(), None)
     s1.tick()
-    expect(f.value()).toBe(None)
+    assert.equal(f.value(), None)
     s2.tick()
 
-    expect(is(f.value(), Some(Success(2)))).toBe(true)
+    assert.equal(f.value(), Some(Success(2)))
   })
 
-  test("Future.of(?, ec).withScheduler(ec) yields the same reference", () => {
+  it("Future.of(?, ec).withScheduler(ec) yields the same reference", () => {
     const s1 = new TestScheduler()
     const s2 = new TestScheduler()
     const fa = Future.of(() => 1, s1)
 
-    expect(fa.withScheduler(s1)).toBe(fa)
-    expect(fa.withScheduler(s2) !== fa).toBeTruthy()
+    assert.equal(fa.withScheduler(s1), fa)
+    assert.ok(fa.withScheduler(s2) !== fa)
   })
 
-  test("Future.create protects against contract violations", () => {
+  it("Future.create protects against contract violations", () => {
     let error: any = null
 
     const f = Future.create(cb => {
@@ -454,137 +453,137 @@ describe("FutureBuilder", () => {
       try { cb(Success(1)) } catch (e) { error = e }
     })
 
-    expect(is(f.value(), Some(Success(1)))).toBe(true)
-    expect(error instanceof IllegalStateError).toBe(true)
+    assert.equal(f.value(), Some(Success(1)))
+    assert.ok(error instanceof IllegalStateError)
   })
 })
 
 describe("Future is Promise-like", () => {
-  test("fa.then() === fa", () => {
+  it("fa.then() === fa", () => {
     const fa = Future.pure(10)
     const f = fa.then()
-    expect(f).toBe(fa)
+    assert.equal(f, fa)
   })
 
-  test("then(onSuccess) behaves like map", () => {
+  it("then(onSuccess) behaves like map", () => {
     const s = new TestScheduler()
 
     const f = Future.pure(10, s).then(x => x * 2)
-    expect(is(f.value(), Some(Success(20)))).toBe(true)
+    assert.equal(f.value(), Some(Success(20)))
   })
 
-  test("fa.then(null) <-> fa", () => {
+  it("fa.then(null) <-> fa", () => {
     const s = new TestScheduler()
     const f = Future.pure(10, s).then(null, () => {})
-    expect(is(f.value(), Some(Success(10)))).toBe(true)
+    assert.equal(f.value(), Some(Success(10)))
   })
 
-  test("then(onSuccess) behaves like flatMap", () => {
+  it("then(onSuccess) behaves like flatMap", () => {
     const s = new TestScheduler()
 
     const f = Future.pure(10, s).then(x => Future.pure(x * 2))
-    expect(is(f.value(), Some(Success(20)))).toBe(true)
+    assert.equal(f.value(), Some(Success(20)))
   })
 
-  test("Future.fromPromise(fa) === fa", () => {
+  it("Future.fromPromise(fa) === fa", () => {
     const fa = Future.pure(10)
-    expect(Future.fromPromise(fa)).toBe(fa)
+    assert.equal(Future.fromPromise(fa), fa)
   })
 
-  test("Future.fromPromise works for successful promises", () => {
+  it("Future.fromPromise works for successful promises", () => {
     const fa: Future<number> = Future.fromPromise(new PromiseBox(Success(100)))
-    expect(is(fa.value(), Some(Success(100))))
+    assert.equal(fa.value(), Some(Success(100)))
   })
 
-  test("Future.fromPromise works for failed promises", () => {
+  it("Future.fromPromise works for failed promises", () => {
     const fa = Future.fromPromise(new PromiseBox(Failure("dummy")))
-    expect(is(fa.value(), Some(Failure("dummy"))))
+    assert.equal(fa.value(), Some(Failure("dummy")))
   })
 
-  test("actual async functions await", () => {
+  it("actual async functions await", () => {
     const f: Future<number> = Future.fromPromise(asyncSample(100))
 
     return f.then(num => {
-      expect(num).toBe(50 * 99)
+      assert.equal(num, 50 * 99)
     })
   })
 
-  test("actual async function await on triggered error", () => {
+  it("actual async function await on triggered error", () => {
     const f: Future<number> = Future.fromPromise(asyncErrorSample(100))
 
     return f.then(num => {
-      expect(num).toBe(110)
+      assert.equal(num, 110)
     })
   })
 
-  test("converts to Promise if async", () => {
+  it("converts to Promise if async", () => {
     const s = new TestScheduler()
     const p = Future.of(() => 1 + 1).toPromise()
-    return p.then(num => expect(num).toBe(2))
+    return p.then(num => assert.equal(num, 2))
   })
 
-  test("converts to Promise if async error", () => {
+  it("converts to Promise if async error", () => {
     const s = new TestScheduler()
     const dummy = new DummyError()
     const p = Future.of(() => { throw dummy }).toPromise()
-    return p.then(null, err => expect(err).toBe(dummy))
+    return p.then(null, err => assert.equal(err, dummy))
   })
 
-  test("converts to Promise if pure", () => {
+  it("converts to Promise if pure", () => {
     const s = new TestScheduler()
     const p = Future.pure(2).toPromise()
-    return p.then(num => expect(num).toBe(2))
+    return p.then(num => assert.equal(num, 2))
   })
 
-  test("converts to Promise if pure error", () => {
+  it("converts to Promise if pure error", () => {
     const s = new TestScheduler()
     const dummy = new DummyError()
     const p = Future.raise(dummy).toPromise()
-    return p.then(null, err => expect(err).toBe(dummy))
+    return p.then(null, err => assert.equal(err, dummy))
   })
 })
 
 describe("Future delayTick + delayResult", () => {
-  test("delayResult works for successful values", () => {
+  it("delayResult works for successful values", () => {
     const s = new TestScheduler()
 
     const f = Future.pure(1, s).delayResult(1000)
-    expect(f.value()).toBe(None)
+    assert.equal(f.value(), None)
 
     s.tick(1000)
-    expect(is(f.value(), Some(Success(1)))).toBe(true)
+    assert.equal(f.value(), Some(Success(1)))
   })
 
-  test("delayResult works for failures", () => {
+  it("delayResult works for failures", () => {
     const s = new TestScheduler()
 
     const dummy = new DummyError("dummy")
     const f = Future.raise(dummy, s).delayResult(1000)
-    expect(f.value()).toBe(None)
+    assert.equal(f.value(), None)
 
     s.tick(1000)
-    expect(is(f.value(), Some(Failure(dummy)))).toBe(true)
+    assert.equal(f.value(), Some(Failure(dummy)))
   })
 
-  test("delayResult with global scheduler", () => {
+  it("delayResult with global scheduler", () => {
     const f = Future.pure(1).delayResult(10)
 
     return f.map(x => {
-      expect(x).toBe(1)
+      assert.equal(x, 1)
     })
   })
 
-  test("delayedTick with global scheduler", () => {
+  it("delayedTick with global scheduler", () => {
     const f = Future.delayedTick(10)
 
     return f.map(x => {
-      expect(x).toBe(undefined)
+      assert.equal(x, undefined)
     })
   })
 })
 
 describe("Future.sequence", () => {
-  test("happy path", () => {
+  it("happy path", () => {
     const s = new TestScheduler()
 
     const f1 = Future.of(() => 1, s)
@@ -592,13 +591,13 @@ describe("Future.sequence", () => {
     const f3 = Future.of(() => 3, s)
 
     const fl = Future.sequence([f1, f2, f3], s).map(_ => _.toString())
-    expect(fl.value()).toBe(None)
+    assert.equal(fl.value(), None)
 
     s.tick()
-    expect(is(fl.value(), Some(Success("1,2,3")))).toBe(true)
+    assert.equal(fl.value(), Some(Success("1,2,3")))
   })
 
-  test("happy path with delayed results", () => {
+  it("happy path with delayed results", () => {
     const s = new TestScheduler()
     let effect = 0
 
@@ -607,37 +606,37 @@ describe("Future.sequence", () => {
     const f3 = Future.of(() => 3, s).delayResult(2000).map(x => { effect += 1; return x })
 
     const fl = Future.sequence([f1, f2, f3], s).map(_ => _.toString())
-    expect(fl.value()).toBe(None)
+    assert.equal(fl.value(), None)
 
     s.tick()
-    expect(effect).toBe(0)
-    expect(fl.value()).toBe(None)
+    assert.equal(effect, 0)
+    assert.equal(fl.value(), None)
 
     s.tick(1000)
-    expect(effect).toBe(1)
-    expect(fl.value()).toBe(None)
+    assert.equal(effect, 1)
+    assert.equal(fl.value(), None)
 
     s.tick(1000)
-    expect(effect).toBe(2)
-    expect(fl.value()).toBe(None)
+    assert.equal(effect, 2)
+    assert.equal(fl.value(), None)
 
     s.tick(1000)
-    expect(effect).toBe(3)
-    expect(is(fl.value(), Some(Success("1,2,3")))).toBe(true)
+    assert.equal(effect, 3)
+    assert.equal(fl.value(), Some(Success("1,2,3")))
   })
 
-  test("sequence of empty list", () => {
+  it("sequence of empty list", () => {
     const list: Future<number>[] = []
     const all = Future.sequence(list).map(_ => _.toString())
-    expect(is(all.value(), Some(Success("")))).toBe(true)
+    assert.equal(all.value(), Some(Success("")))
   })
 
-  test("sequence of null list", () => {
-    const all = Future.sequence(null as any[]).map(_ => _.toString())
-    expect(is(all.value(), Some(Success("")))).toBe(true)
+  it("sequence of null list", () => {
+    const all = Future.sequence((null as any) as any[]).map(_ => _.toString())
+    assert.equal(all.value(), Some(Success("")))
   })
 
-  test("on failure of a future, cancels all", () => {
+  it("on failure of a future, cancels all", () => {
     const s = new TestScheduler()
     let effect = 0
     const create = () => Future.create(_ => Cancelable.of(() => { effect += 1 }), s)
@@ -647,15 +646,15 @@ describe("Future.sequence", () => {
     const all = Future.sequence([create(), create(), fail, create(), create()], s)
 
     s.tick()
-    expect(all.value()).toBe(None)
-    expect(effect).toBe(0)
+    assert.equal(all.value(), None)
+    assert.equal(effect, 0)
 
     s.tick(2000)
-    expect(is(all.value(), Some(Failure(dummy)))).toBe(true)
-    expect(effect).toBe(4)
+    assert.equal(all.value(), Some(Failure(dummy)))
+    assert.equal(effect, 4)
   })
 
-  test("works with actual Iterable", () => {
+  it("works with actual Iterable", () => {
     let effect = 0
 
     const iter = {
@@ -676,10 +675,10 @@ describe("Future.sequence", () => {
       return sum
     })
 
-    expect(is(f.value(), Some(Success(6)))).toBe(true)
+    assert.equal(f.value(), Some(Success(6)))
   })
 
-  test("protects against broken Iterable", () => {
+  it("protects against broken Iterable", () => {
     const ec = new TestScheduler()
     const dummy = new DummyError("dummy")
     let effect = 0
@@ -700,56 +699,56 @@ describe("Future.sequence", () => {
 
     const all = Future.sequence(iter as any, ec)
     ec.tick()
-    expect(is(all.value(), Some(Failure(dummy)))).toBe(true)
-    expect(effect).toBe(3)
+    assert.equal(all.value(), Some(Failure(dummy)))
+    assert.equal(effect, 3)
   })
 
-  test("map2", () => {
+  it("map2", () => {
     const f = Future.map2(
       Future.pure(1), Future.pure(2),
       (a, b) => a + b
     )
 
-    expect(is(f.value(), Some(Success(3)))).toBe(true)
+    assert.equal(f.value(), Some(Success(3)))
   })
 
-  test("map3", () => {
+  it("map3", () => {
     const f = Future.map3(
       Future.pure(1), Future.pure(2), Future.pure(3),
       (a, b, c) => a + b + c
     )
 
-    expect(is(f.value(), Some(Success(6)))).toBe(true)
+    assert.equal(f.value(), Some(Success(6)))
   })
 
-  test("map4", () => {
+  it("map4", () => {
     const f = Future.map4(
       Future.pure(1), Future.pure(2), Future.pure(3), Future.pure(4),
       (a, b, c, d) => a + b + c + d
     )
 
-    expect(is(f.value(), Some(Success(10)))).toBe(true)
+    assert.equal(f.value(), Some(Success(10)))
   })
 
-  test("map5", () => {
+  it("map5", () => {
     const f = Future.map5(
       Future.pure(1), Future.pure(2), Future.pure(3), Future.pure(4), Future.pure(5),
       (a, b, c, d, e) => a + b + c + d + e
     )
 
-    expect(is(f.value(), Some(Success(15)))).toBe(true)
+    assert.equal(f.value(), Some(Success(15)))
   })
 
-  test("map6", () => {
+  it("map6", () => {
     const f = Future.map6(
       Future.pure(1), Future.pure(2), Future.pure(3), Future.pure(4), Future.pure(5), Future.pure(6),
       (a, b, c, d, e, f) => a + b + c + d + e + f
     )
 
-    expect(is(f.value(), Some(Success(21)))).toBe(true)
+    assert.equal(f.value(), Some(Success(21)))
   })
 
-  test("protect against broken cancelable", () => {
+  it("protect against broken cancelable", () => {
     const ec = new TestScheduler()
     let effect = 0
     const never = () => Future.create(_ => Cancelable.of(() => { effect += 1 }), ec)
@@ -760,13 +759,13 @@ describe("Future.sequence", () => {
     const all = Future.sequence([never(), never(), fail, never(), never()], ec)
     all.cancel()
 
-    expect(effect).toBe(4)
+    assert.equal(effect, 4)
     const errs = ec.triggeredFailures()
-    expect(errs.length).toBe(1)
-    expect(errs[0]).toBe(dummy)
+    assert.equal(errs.length, 1)
+    assert.equal(errs[0], dummy)
   })
 
-  test("on failure signaling result is blocked", () => {
+  it("on failure signaling result is blocked", () => {
     const ec = new TestScheduler()
     const dummy1 = new DummyError("dummy1")
     const dummy2 = new DummyError("dummy1")
@@ -778,53 +777,53 @@ describe("Future.sequence", () => {
     ], ec)
 
     ec.tick()
-    expect(is(all.value(), Some(Failure(dummy1))))
-    expect(ec.triggeredFailures().length).toBe(1)
+    assert.equal(all.value(), Some(Failure(dummy1)))
+    assert.equal(ec.triggeredFailures().length, 1)
   })
 })
 
 describe("Future.firstCompletedOf", () => {
-  test("happy path", () => {
+  it("happy path", () => {
     const f = Future.firstCompletedOf([Future.pure(1), Future.pure(2)])
-    expect(is(f.value(), Some(Success(1)))).toBe(true)
+    assert.equal(f.value(), Some(Success(1)))
   })
 
-  test("timeout", () => {
+  it("timeout", () => {
     const ec = new TestScheduler()
     let effect = 0
     const never = Future.create(_ => Cancelable.of(() => { effect += 1 }), ec)
 
     const fa = never.timeout(Duration.of(1000))
     ec.tick()
-    expect(fa.value()).toBe(None)
+    assert.equal(fa.value(), None)
 
     ec.tick(1000)
     const v = fa.value()
 
-    expect(!v.isEmpty()).toBeTruthy()
-    expect(v.get().isFailure()).toBeTruthy()
-    expect(v.get().failed().get() instanceof TimeoutError).toBeTruthy()
-    expect((v.get().failed().get() as TimeoutError).message).toBe("1000 milliseconds")
-    expect(effect).toBe(1)
+    assert.ok(!v.isEmpty())
+    assert.ok(v.get().isFailure())
+    assert.ok(v.get().failed().get() instanceof TimeoutError)
+    assert.equal((v.get().failed().get() as TimeoutError).message, "1000 milliseconds")
+    assert.equal(effect, 1)
   })
 
-  test("timeoutTo", () => {
+  it("timeoutTo", () => {
     const ec = new TestScheduler()
     let effect = 0
     const never = Future.create(_ => Cancelable.of(() => { effect += 1 }), ec)
 
     const fa = never.timeoutTo(1000, () => Future.pure(1000))
     ec.tick()
-    expect(fa.value()).toBe(None)
+    assert.equal(fa.value(), None)
 
     ec.tick(1000)
     const v = fa.value()
 
-    expect(is(fa.value(), Some(Success(1000))))
-    expect(effect).toBe(1)
+    assert.equal(fa.value(), Some(Success(1000)))
+    assert.equal(effect, 1)
   })
 
-  test("report success, cancel the losers", () => {
+  it("report success, cancel the losers", () => {
     const ec = new TestScheduler()
     let effect = 0
 
@@ -839,11 +838,11 @@ describe("Future.firstCompletedOf", () => {
       ec)
 
     ec.tick(2000)
-    expect(is(first.value(), Some(Success(2)))).toBe(true)
-    expect(effect).toBe(1 + 3)
+    assert.equal(first.value(), Some(Success(2)))
+    assert.equal(effect, 1 + 3)
   })
 
-  test("report failure, cancel the losers", () => {
+  it("report failure, cancel the losers", () => {
     const ec = new TestScheduler()
     const dummy = new DummyError("dummy")
     let effect = 0
@@ -863,11 +862,11 @@ describe("Future.firstCompletedOf", () => {
       ec)
 
     ec.tick(2000)
-    expect(is(first.value(), Some(Failure(dummy)))).toBe(true)
-    expect(effect).toBe(1 + 3)
+    assert.equal(first.value(), Some(Failure(dummy)))
+    assert.equal(effect, 1 + 3)
   })
 
-  test("works with actual Iterable", () => {
+  it("works with actual Iterable", () => {
     const ec = new TestScheduler()
     let effect = 0
 
@@ -886,13 +885,13 @@ describe("Future.firstCompletedOf", () => {
     }
 
     const f = Future.firstCompletedOf(iter as Iterable<Future<number>>, ec)
-    expect(f.value()).toBe(None)
+    assert.equal(f.value(), None)
 
     ec.tick(1000)
-    expect(is(f.value(), Some(Success(1))))
+    assert.equal(f.value(), Some(Success(3)))
   })
 
-  test("protects against broken Iterable", () => {
+  it("protects against broken Iterable", () => {
     const ec = new TestScheduler()
     const dummy = new DummyError("dummy")
     let effect = 0
@@ -913,11 +912,11 @@ describe("Future.firstCompletedOf", () => {
 
     const all = Future.firstCompletedOf(iter as any, ec)
     ec.tick()
-    expect(is(all.value(), Some(Failure(dummy)))).toBe(true)
-    expect(effect).toBe(3)
+    assert.equal(all.value(), Some(Failure(dummy)))
+    assert.equal(effect, 3)
   })
 
-  test("signaling result is blocked after first", () => {
+  it("signaling result is blocked after first", () => {
     const ec = new TestScheduler()
     const dummy1 = new DummyError("dummy1")
     const dummy2 = new DummyError("dummy1")
@@ -929,11 +928,11 @@ describe("Future.firstCompletedOf", () => {
     ], ec)
 
     ec.tick()
-    expect(is(all.value(), Some(Failure(dummy1))))
-    expect(ec.triggeredFailures().length).toBe(1)
+    assert.equal(all.value(), Some(Failure(dummy1)))
+    assert.equal(ec.triggeredFailures().length, 1)
   })
 
-  test("protect against broken cancelable", () => {
+  it("protect against broken cancelable", () => {
     const ec = new TestScheduler()
     let effect = 0
     const never = () => Future.create(_ => Cancelable.of(() => { effect += 1 }), ec)
@@ -944,22 +943,22 @@ describe("Future.firstCompletedOf", () => {
     const all = Future.firstCompletedOf([never(), never(), fail, never(), never()], ec)
     all.cancel()
 
-    expect(effect).toBe(4)
+    assert.equal(effect, 4)
     const errs = ec.triggeredFailures()
-    expect(errs.length).toBe(1)
-    expect(errs[0]).toBe(dummy)
+    assert.equal(errs.length, 1)
+    assert.equal(errs[0], dummy)
   })
 
-  test("empty list is illegal", () => {
+  it("empty list is illegal", () => {
     const f = Future.firstCompletedOf([])
-    expect(!f.value().isEmpty()).toBeTruthy()
-    expect(f.value().get().isFailure()).toBeTruthy()
-    expect(f.value().get().failed().get() instanceof IllegalArgumentError).toBeTruthy()
+    assert.ok(!f.value().isEmpty())
+    assert.ok(f.value().get().isFailure())
+    assert.ok(f.value().get().failed().get() instanceof IllegalArgumentError)
   })
 })
 
 describe("Future.traverse", () => {
-  test("happy path for parallelism = 1, 2, 4, Infinity", () => {
+  it("happy path for parallelism = 1, 2, 4, Infinity", () => {
     const ec = new TestScheduler()
     const list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     const parallelism = [1, 2, 4, Infinity]
@@ -973,24 +972,24 @@ describe("Future.traverse", () => {
       })
 
       ec.tick()
-      expect(all.value().isEmpty()).toBeFalsy()
-      expect(all.value().get().get()).toBe(110)
+      assert.not(all.value().isEmpty())
+      assert.equal(all.value().get().get(), 110)
     }
   })
 
-  test("parallelism <= 0 throws", () => {
-    expect(() => Future.traverse([], -1)(Future.pure)).toThrow()
+  it("parallelism <= 0 throws", () => {
+    assert.throws(() => Future.traverse([], -1)(Future.pure))
   })
 
-  test("empty list is empty", () => {
+  it("empty list is empty", () => {
     const ec = new TestScheduler()
     const f = Future.traverse([], Infinity, ec)(Future.pure).map(_ => _.toString())
 
     ec.tick()
-    expect(is(f.value(), Some(Success("")))).toBeTruthy()
+    assert.ok(is(f.value(), Some(Success(""))))
   })
 
-  test("protect against user errors in generator", () => {
+  it("protect against user errors in generator", () => {
     const ec = new TestScheduler()
     const list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     const dummy = new DummyError("dummy")
@@ -1004,19 +1003,19 @@ describe("Future.traverse", () => {
     })
 
     ec.tick()
-    expect(is(f.value(), Some(Failure(dummy)))).toBeTruthy()
-    expect(effect).toBe(1 + 2 + 3 + 4 + 5)
+    assert.ok(is(f.value(), Some(Failure(dummy))))
+    assert.equal(effect, 1 + 2 + 3 + 4 + 5)
   })
 
-  test("handles null list", () => {
+  it("handles null list", () => {
     const ec = new TestScheduler()
     const f = Future.traverse(null as any, Infinity, ec)(Future.pure).map(_ => _.toString())
 
     ec.tick()
-    expect(is(f.value(), Some(Success("")))).toBeTruthy()
+    assert.ok(is(f.value(), Some(Success(""))))
   })
 
-  test("works with actual Iterable", () => {
+  it("works with actual Iterable", () => {
     const ec = new TestScheduler()
     let effect = 0
 
@@ -1042,10 +1041,10 @@ describe("Future.traverse", () => {
       })
 
     ec.tick()
-    expect(is(f.value(), Some(Success(6)))).toBe(true)
+    assert.equal(f.value(), Some(Success(6)))
   })
 
-  test("protects against broken Iterable", () => {
+  it("protects against broken Iterable", () => {
     const ec = new TestScheduler()
     const dummy = new DummyError("dummy")
     let effect = 0
@@ -1064,10 +1063,10 @@ describe("Future.traverse", () => {
 
     const all = Future.traverse(iter as any, Infinity, ec)(Future.pure)
     ec.tick()
-    expect(is(all.value(), Some(Failure(dummy)))).toBe(true)
+    assert.equal(all.value(), Some(Failure(dummy)))
   })
 
-  test("actual execution", () => {
+  it("actual execution", () => {
     const list = [1, 2, 3]
     const fa = Future.traverse(list)(Future.pure)
       .map(arr => {
@@ -1077,20 +1076,20 @@ describe("Future.traverse", () => {
       })
 
     return fa.toPromise().then(x => {
-      expect(x).toBe(6)
+      assert.equal(x, 6)
     })
   })
 })
 
 describe("Future.tailRecM", () => {
-  test("is tail safe", () => {
+  it("is tail safe", () => {
     const f = Future.tailRecM(0, a => {
       return a < 10000
         ? Future.pure(Left(a + 1))
         : Future.pure(Right(a))
     })
 
-    expect(is(f.value(), Some(Success(10000)))).toBeTruthy()
+    assert.ok(is(f.value(), Some(Success(10000))))
   })
 })
 
