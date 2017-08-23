@@ -15,29 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Exposes the {@link Eq} type class.
- *
- * À la carte imports work, assuming an ECMAScript 2015 compatible environment,
- * including ES2015 modules and `import` syntax:
- *
- * ```typescript
- * import { Eq } from "funfix/dist/types/eq"
- * // ... or ...
- * import { Eq } from "funfix/dist/types"
- * // ... or ...
- * import { Eq } from "funfix"
- * ```
- *
- * In absence of ES2015 compatibility, you can still rely on working with the
- * packaged (`pkg.main`) universal distribution that works within all browsers
- * and environments.
- *
- * @module types/eq
- */
-
-/***/
-
 import { Constructor, getTypeClassInstance } from "./kinds"
 
 /**

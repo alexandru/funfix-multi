@@ -15,31 +15,9 @@
  * limitations under the License.
  */
 
-/**
- * Exposes the {@link Apply} and {@link Applicative} type classes.
- *
- * À la carte imports work, assuming an ECMAScript 2015 compatible environment,
- * including ES2015 modules and `import` syntax:
- *
- * ```typescript
- * import { Applicative } from "funfix/dist/types/applicative"
- * // ... or ...
- * import { Applicative } from "funfix/dist/types"
- * // ... or ...
- * import { Applicative } from "funfix"
- * ```
- *
- * In absence of ES2015 compatibility, you can still rely on working with the
- * packaged (`pkg.main`) universal distribution that works within all browsers
- * and environments.
- *
- * @module types/applicative
- */
-
-/***/
 import { HK, Equiv, Constructor, getTypeClassInstance } from "./kinds"
 import { Functor, FunctorLaws } from "./functor"
-import { Either, Right, Left, NotImplementedError, applyMixins } from "funfix-core"
+import { Either, Right, Left, applyMixins } from "funfix-core"
 
 /**
  * The `Apply` type class, a weaker version of {@link Applicative},

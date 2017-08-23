@@ -15,9 +15,13 @@
  * limitations under the License.
  */
 
-export * from "./kinds"
-export * from "./eq"
-export * from "./functor"
-export * from "./applicative"
-export * from "./monad"
-export * from "./instances"
+import { Either } from "funfix-core"
+import * as jv from "jsverify"
+import * as laws from "./laws"
+import * as inst from "./instances"
+import { eqOf } from "../../src"
+
+describe("Either obeys type class laws", () => {
+  laws.testEq(Either, inst.arbEither)
+  laws.testMonad(Either, jv.number, inst.arbEither, eqOf(Either))
+})

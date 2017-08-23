@@ -15,28 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Exposes the {@link Monad} and {@link FlatMap} type classes.
- *
- * À la carte imports work, assuming an ECMAScript 2015 compatible environment,
- * including ES2015 modules and `import` syntax:
- *
- * ```typescript
- * import { Monad } from "funfix/dist/types/monad"
- * // ... or ...
- * import { Monad } from "funfix/dist/types"
- * // ... or ...
- * import { Monad } from "funfix"
- * ```
- *
- * In absence of ES2015 compatibility, you can still rely on working with the
- * packaged (`pkg.main`) universal distribution that works within all browsers
- * and environments.
- *
- * @module types/monad
- */
-
-/***/
 import { Either, Right, Left, applyMixins } from "funfix-core"
 import { HK, Equiv, Constructor, getTypeClassInstance } from "./kinds"
 import {

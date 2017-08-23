@@ -15,26 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Utilities for working with type classes and higher kinded types.
- *
- * À la carte imports work, assuming an ECMAScript 2015 compatible environment,
- * including ES2015 modules and `import` syntax:
- *
- * ```typescript
- * import { HK } from "funfix/dist/types/kinds"
- * // ... or ...
- * import { HK } from "funfix"
- * ```
- *
- * In absence of ES2015 compatibility, you can still rely on working with the
- * packaged (`pkg.main`) universal distribution that works within all browsers
- * and environments.
- *
- * @module types/kinds
- */
-
-/***/
 import { IllegalArgumentError, NotImplementedError } from "funfix-core"
 
 /**

@@ -15,9 +15,29 @@
  * limitations under the License.
  */
 
-export * from "./kinds"
-export * from "./eq"
-export * from "./functor"
-export * from "./applicative"
-export * from "./monad"
-export * from "./instances"
+import * as fns from "assert"
+import { is } from "funfix-core"
+
+export function ok(cond: boolean, message?: string): void {
+  return fns.ok(cond, message)
+}
+
+export function not(cond: boolean, message?: string): void {
+  return fns.ok(!cond, message)
+}
+
+export function throws(thunk: () => any, message?: string): void {
+  return fns.throws(thunk, message)
+}
+
+export function equal<A>(lh: A, rh: A): void {
+  return fns.ok(is(lh, rh), `${lh} == ${rh}`)
+}
+
+export function notEqual<A>(lh: A, rh: A): void {
+  return fns.ok(!is(lh, rh), `${lh} != ${rh}`)
+}
+
+export function fail(message: string): void {
+  return fns.fail(message)
+}

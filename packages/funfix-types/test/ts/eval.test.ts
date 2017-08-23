@@ -15,9 +15,19 @@
  * limitations under the License.
  */
 
-export * from "./kinds"
-export * from "./eq"
-export * from "./functor"
-export * from "./applicative"
-export * from "./monad"
-export * from "./instances"
+import { Eval } from "funfix-effect"
+import * as jv from "jsverify"
+import * as laws from "./laws"
+import * as inst from "./instances"
+import { Eq } from "../../src/"
+
+describe("Eval obeys type class laws", () => {
+  const eq =
+    new (class extends Eq<Eval<any>> {
+      eqv(lh: Eval<any>, rh: Eval<any>): boolean {
+        return lh.run().equals(rh.run())
+      }
+    })()
+
+  laws.testMonadError(Eval, jv.number, inst.arbEval, jv.string, eq)
+})

@@ -15,28 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Exposes the {@link Functor} type class.
- *
- * À la carte imports work, assuming an ECMAScript 2015 compatible environment,
- * including ES2015 modules and `import` syntax:
- *
- * ```typescript
- * import { Functor } from "funfix/dist/types/functor"
- * // ... or ...
- * import { Functor } from "funfix/dist/types"
- * // ... or ...
- * import { Functor } from "funfix"
- * ```
- *
- * In absence of ES2015 compatibility, you can still rely on working with the
- * packaged (`pkg.main`) universal distribution that works within all browsers
- * and environments.
- *
- * @module types/functor
- */
-
-/***/
 import { id } from "funfix-core"
 import { HK, Equiv, Constructor, getTypeClassInstance } from "./kinds"
 

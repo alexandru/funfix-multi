@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { Try, Success, Option, Some, Either, Right, applyMixins } from "funfix-core"
+import { Try, Success, Option, Some, Either, Right, applyMixins, Throwable } from "funfix-core"
 import { Eval } from "funfix-effect"
 import { Future } from "funfix-exec"
 import { HK, registerTypeClassInstance } from "./kinds"
@@ -97,10 +97,7 @@ export type TryK<A> = HK<Try<any>, A>
 /**
  * Type class instances provided by default for `Option`.
  */
-export class TryInstances implements MonadError<Try<any>, any>, Eq<Try<any>> {
-  // tslint:disable-next-line:variable-name
-  private __unit: Try<void> = Success(undefined)
-
+export class TryInstances implements MonadError<Try<any>, Throwable>, Eq<Try<any>> {
   eqv(lh: Try<any>, rh: Try<any>): boolean {
     return lh.equals(rh)
   }
@@ -141,19 +138,19 @@ export class TryInstances implements MonadError<Try<any>, any>, Eq<Try<any>> {
     return Try.failure<A>(e)
   }
 
-  attempt<A>(fa: TryK<A>): Try<Either<any, A>> {
+  attempt<A>(fa: TryK<A>): Try<Either<Throwable, A>> {
     return Try.success((fa as Try<A>).fold(
-      e => Either.left<any, A>(e),
+      e => Either.left<Throwable, A>(e),
       Either.right
     ))
   }
 
-  recoverWith<A>(fa: TryK<A>, f: (e: any) => TryK<A>): Try<A> {
-    return (fa as Try<A>).recoverWith(f as ((e: any) => Try<A>))
+  recoverWith<A>(fa: TryK<A>, f: (e: Throwable) => TryK<A>): Try<A> {
+    return (fa as Try<A>).recoverWith(f as ((e: Throwable) => Try<A>))
   }
 
-  recover<A>(fa: TryK<A>, f: (e: any) => A): Try<A> {
-    return (fa as Try<A>).recover(f as ((e: any) => A))
+  recover<A>(fa: TryK<A>, f: (e: Throwable) => A): Try<A> {
+    return (fa as Try<A>).recover(f as ((e: Throwable) => A))
   }
 
   // Mixed-in
@@ -252,7 +249,7 @@ export type EvalK<A> = HK<Eval<any>, A>
 /**
  * Type class instances provided by default for `Eval`.
  */
-export class EvalInstances implements MonadError<Eval<any>, any> {
+export class EvalInstances implements MonadError<Eval<any>, Throwable> {
   pure<A>(a: A): Eval<A> {
     return Eval.now(a)
   }
@@ -279,20 +276,20 @@ export class EvalInstances implements MonadError<Eval<any>, any> {
     return Eval.unit()
   }
 
-  raise<A>(e: any): Eval<A> {
+  raise<A>(e: Throwable): Eval<A> {
     return Eval.raise(e)
   }
 
-  attempt<A>(fa: EvalK<A>): Eval<Either<any, A>> {
+  attempt<A>(fa: EvalK<A>): Eval<Either<Throwable, A>> {
     return (fa as Eval<A>).attempt() as any
   }
 
-  recoverWith<A>(fa: EvalK<A>, f: (e: any) => EvalK<A>): Eval<A> {
-    return (fa as Eval<A>).recoverWith(f as ((e: any) => Eval<A>))
+  recoverWith<A>(fa: EvalK<A>, f: (e: Throwable) => EvalK<A>): Eval<A> {
+    return (fa as Eval<A>).recoverWith(f as ((e: Throwable) => Eval<A>))
   }
 
-  recover<A>(fa: EvalK<A>, f: (e: any) => A): Eval<A> {
-    return (fa as Eval<A>).recover(f as ((e: any) => A))
+  recover<A>(fa: EvalK<A>, f: (e: Throwable) => A): Eval<A> {
+    return (fa as Eval<A>).recover(f as ((e: Throwable) => A))
   }
 
   // Mixed-in
@@ -321,7 +318,7 @@ export type FutureK<A> = HK<Future<any>, A>
 /**
  * Type class instances provided by default for `Future`.
  */
-export class FutureInstances implements MonadError<Future<any>, any> {
+export class FutureInstances implements MonadError<Future<any>, Throwable> {
   pure<A>(a: A): Future<A> {
     return Future.pure(a)
   }
@@ -348,19 +345,19 @@ export class FutureInstances implements MonadError<Future<any>, any> {
     return Future.unit()
   }
 
-  raise<A>(e: any): Future<A> {
+  raise<A>(e: Throwable): Future<A> {
     return Future.raise(e)
   }
 
-  attempt<A>(fa: FutureK<A>): Future<Either<any, A>> {
+  attempt<A>(fa: FutureK<A>): Future<Either<Throwable, A>> {
     return (fa as Future<A>).attempt() as any
   }
 
-  recoverWith<A>(fa: FutureK<A>, f: (e: any) => FutureK<A>): Future<A> {
+  recoverWith<A>(fa: FutureK<A>, f: (e: Throwable) => FutureK<A>): Future<A> {
     return (fa as Future<A>).recoverWith(f as ((e: any) => Future<A>))
   }
 
-  recover<A>(fa: FutureK<A>, f: (e: any) => A): Future<A> {
+  recover<A>(fa: FutureK<A>, f: (e: Throwable) => A): Future<A> {
     return (fa as Future<A>).recover(f as ((e: any) => A))
   }
 

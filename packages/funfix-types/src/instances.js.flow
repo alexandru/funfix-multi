@@ -17,10 +17,11 @@
 
 /* @flow */
 
-import { HK } from "./kinds"
+import type { Throwable } from "funfix-core"
 import { Option, Try, Either } from "funfix-core"
 import { Future } from "funfix-exec"
 import { Eval } from "funfix-effect"
+import { HK } from "./kinds"
 
 export type OptionK<A> = HK<Option<any>, A>;
 
@@ -58,10 +59,10 @@ declare export class TryInstances {
   followedByL<A, B>(fa: TryK<A>, fb: () => TryK<B>): Try<B>;
   forEffect<A, B>(fa: TryK<A>, fb: TryK<B>): Try<A>;
   forEffectL<A, B>(fa: TryK<A>, fb: () => TryK<B>): Try<A>;
-  raise<A>(e: any): Eval<A>;
-  attempt<A>(fa: EvalK<A>): Eval<Either<any, A>>;
-  recoverWith<A>(fa: EvalK<A>, f: (e: any) => EvalK<A>): Eval<A>;
-  recover<A>(fa: EvalK<A>, f: (e: any) => A): Eval<A>;
+  raise<A>(e: Throwable): Try<A>;
+  attempt<A>(fa: TryK<A>): Try<Either<Throwable, A>>;
+  recoverWith<A>(fa: TryK<A>, f: (e: Throwable) => TryK<A>): Try<A>;
+  recover<A>(fa: TryK<A>, f: (e: Throwable) => A): Try<A>;
 
   static global: TryInstances;
 }
@@ -101,10 +102,10 @@ declare export class EvalInstances {
   followedByL<A, B>(fa: EvalK<A>, fb: () => EvalK<B>): Eval<B>;
   forEffect<A, B>(fa: EvalK<A>, fb: EvalK<B>): Eval<A>;
   forEffectL<A, B>(fa: EvalK<A>, fb: () => EvalK<B>): Eval<A>;
-  raise<A>(e: any): Eval<A>;
-  attempt<A>(fa: EvalK<A>): Eval<Either<any, A>>;
-  recoverWith<A>(fa: EvalK<A>, f: (e: any) => EvalK<A>): Eval<A>;
-  recover<A>(fa: EvalK<A>, f: (e: any) => A): Eval<A>;
+  raise<A>(e: Throwable): Eval<A>;
+  attempt<A>(fa: EvalK<A>): Eval<Either<Throwable, A>>;
+  recoverWith<A>(fa: EvalK<A>, f: (e: Throwable) => EvalK<A>): Eval<A>;
+  recover<A>(fa: EvalK<A>, f: (e: Throwable) => A): Eval<A>;
 
   static global: EvalInstances;
 }
@@ -118,10 +119,10 @@ declare export class FutureInstances {
   ap<A, B>(fa: FutureK<A>, ff: FutureK<(a: A) => B>): Future<B>;
   map<A, B>(fa: FutureK<A>, f: (a: A) => B): Future<B>;
   unit(): Future<void>;
-  raise<A>(e: any): Future<A>;
-  attempt<A>(fa: FutureK<A>): Future<Either<any, A>>;
-  recoverWith<A>(fa: FutureK<A>, f: (e: any) => FutureK<A>): Future<A>;
-  recover<A>(fa: FutureK<A>, f: (e: any) => A): Future<A>;
+  raise<A>(e: Throwable): Future<A>;
+  attempt<A>(fa: FutureK<A>): Future<Either<Throwable, A>>;
+  recoverWith<A>(fa: FutureK<A>, f: (e: Throwable) => FutureK<A>): Future<A>;
+  recover<A>(fa: FutureK<A>, f: (e: Throwable) => A): Future<A>;
   map2: <A, B, Z>(fa: FutureK<A>, fb: FutureK<B>, f: (a: A, b: B) => Z) => Future<Z>;
   product: <A, B>(fa: FutureK<A>, fb: FutureK<B>) => FutureK<[A, B]>;
   followedBy: <A, B>(fa: FutureK<A>, fb: FutureK<B>) => Future<B>;

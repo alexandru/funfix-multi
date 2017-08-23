@@ -2,4 +2,5 @@
 --require source-map-support/register
 --full-trace
 --watch-extensions ts 
+--timeout 15000
 test/**/*.test.ts

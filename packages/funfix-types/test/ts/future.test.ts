@@ -15,9 +15,22 @@
  * limitations under the License.
  */
 
-export * from "./kinds"
-export * from "./eq"
-export * from "./functor"
-export * from "./applicative"
-export * from "./monad"
-export * from "./instances"
+import { Future, TestScheduler } from "funfix-exec"
+import * as jv from "jsverify"
+import * as laws from "./laws"
+import * as inst from "./instances"
+import { Eq } from "../../src/"
+
+describe("Future obeys type class laws", () => {
+  const s = new TestScheduler()
+  const eq = new (
+    class extends Eq<Future<any>> {
+      eqv(lh: Future<any>, rh: Future<any>): boolean {
+        s.tick(1000 * 60 * 60 * 24 * 10)
+        return lh.value().equals(rh.value())
+      }
+    })()
+
+  const arbF = inst.arbFuture(s)
+  laws.testMonadError(Future, jv.number, arbF, jv.string, eq)
+})
