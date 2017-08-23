@@ -22,161 +22,163 @@ import {
   Failure,
   Left,
   Right,
-  DummyError
+  DummyError,
+  IllegalStateError
 } from "funfix-core"
 
 import * as jv from "jsverify"
 import * as inst from "./instances"
+import * as assert from "./asserts"
 import { Eval } from "../../src/"
 
 describe("Eval basic data constructors tests", () => {
-  test("sealed class",() => {
+  it("sealed class",() => {
     class Another extends Eval<number> {}
     const err = Try.of(() => new Another().get()).failed().get()
-    expect(err.name).toBe("IllegalStateError")
+    assert.ok(err instanceof IllegalStateError, "err instanceof IllegalStateError")
   })
 
-  test("now(a) should yield value", () => {
-    expect(Eval.now("value").get()).toBe("value")
-    expect(is(Eval.now("value").run(), Success("value"))).toBe(true)
+  it("now(a) should yield value", () => {
+    assert.equal(Eval.now("value").get(), "value")
+    assert.ok(is(Eval.now("value").run(), Success("value")))
   })
 
-  test("now(a).flatMap(f) works", () => {
+  it("now(a).flatMap(f) works", () => {
     const fa = Eval.now(1).flatMap(a => Eval.now(a + 1))
-    expect(fa.get()).toBe(2)
+    assert.equal(fa.get(), 2)
   })
 
-  test("now(a).transform(f) works", () => {
+  it("now(a).transform(f) works", () => {
     const fa = Eval.now(1).transform(_ => { throw _ }, a => a + 1)
-    expect(fa.get()).toBe(2)
+    assert.equal(fa.get(), 2)
   })
 
-  test("now(a).transformWith(f) works", () => {
+  it("now(a).transformWith(f) works", () => {
     const fa = Eval.now(1).transformWith(
       err => Eval.raise(err),
       a => Eval.now(a + 1)
     )
-    expect(fa.get()).toBe(2)
+    assert.equal(fa.get(), 2)
   })
 
-  test("String(now(a))", () => {
-    expect(String(Eval.now("value"))).toBe('Eval.now("value")')
+  it("String(now(a))", () => {
+    assert.equal(String(Eval.now("value")), 'Eval.now("value")')
   })
 
-  test("raise(err) should trigger failure", () => {
-    expect(() => Eval.raise("error").get()).toThrowError("error")
-    expect(is(Eval.raise("error").run(), Failure("error"))).toBe(true)
+  it("raise(err) should trigger failure", () => {
+    assert.throws(() => Eval.raise("error").get())
+    assert.ok(is(Eval.raise("error").run(), Failure("error")))
   })
 
-  test("raise(err).flatMap(f) works", () => {
+  it("raise(err).flatMap(f) works", () => {
     const fe: Eval<number> = Eval.raise("error")
     const fa = fe.flatMap(a => Eval.now(a + 1))
-    expect(is(fa.run(), Failure("error"))).toBe(true)
+    assert.ok(is(fa.run(), Failure("error")))
   })
 
-  test("raise(err).transform(f) works", () => {
+  it("raise(err).transform(f) works", () => {
     const fa = (Eval.raise("error") as Eval<number>).transform(
       _ => 100,
       a => a + 1
     )
-    expect(fa.get()).toBe(100)
+    assert.equal(fa.get(), 100)
   })
 
-  test("raise(err).transformWith(f) works", () => {
+  it("raise(err).transformWith(f) works", () => {
     const fa = (Eval.raise("error") as Eval<number>).transformWith(
       _ => Eval.always(() => 100),
       a => Eval.now(a + 1)
     )
-    expect(fa.get()).toBe(100)
+    assert.equal(fa.get(), 100)
   })
 
-  test("String(raise(error))", () => {
-    expect(String(Eval.raise("error"))).toBe('Eval.raise("error")')
+  it("String(raise(error))", () => {
+    assert.equal(String(Eval.raise("error")), 'Eval.raise("error")')
   })
 
-  test("once() should do memoization", () => {
+  it("once() should do memoization", () => {
     let effect = 0
     const fn1 = Eval.once(() => { effect += 1; return effect })
-    expect(effect).toBe(0)
+    assert.equal(effect, 0)
 
-    expect(fn1.get()).toBe(1)
-    expect(fn1.get()).toBe(1)
+    assert.equal(fn1.get(), 1)
+    assert.equal(fn1.get(), 1)
 
     const fn2 = Eval.once(() => { effect += 1; return effect })
 
-    expect(is(fn2.run(), Success(2))).toBe(true)
-    expect(is(fn2.run(), Success(2))).toBe(true)
+    assert.ok(is(fn2.run(), Success(2)))
+    assert.ok(is(fn2.run(), Success(2)))
   })
 
-  test("once(a).flatMap(f) works", () => {
+  it("once(a).flatMap(f) works", () => {
     const fa = Eval.once(() => 1).flatMap(a => Eval.once(() => a + 1))
-    expect(fa.get()).toBe(2)
+    assert.equal(fa.get(), 2)
   })
 
-  test("once(a).transformWith(f,g) works", () => {
+  it("once(a).transformWith(f,g) works", () => {
     const fa = Eval.once(() => 1).transformWith(
       err => Eval.raise(err),
       a => Eval.once(() => a + 1)
     )
-    expect(fa.get()).toBe(2)
+    assert.equal(fa.get(), 2)
   })
 
-  test("String(once(...))", () => {
-    expect(String(Eval.once(() => "value"))).toBe("Eval.once([thunk])")
+  it("String(once(...))", () => {
+    assert.equal(String(Eval.once(() => "value")), "Eval.once([thunk])")
   })
 
-  test("always() should execute every time", () => {
+  it("always() should execute every time", () => {
     let effect = 0
     const fn = Eval.always(() => { effect += 1; return effect })
-    expect(effect).toBe(0)
+    assert.equal(effect, 0)
 
-    expect(fn.get()).toBe(1)
-    expect(fn.get()).toBe(2)
-    expect(is(fn.run(), Success(3))).toBe(true)
-    expect(is(fn.run(), Success(4))).toBe(true)
+    assert.equal(fn.get(), 1)
+    assert.equal(fn.get(), 2)
+    assert.ok(is(fn.run(), Success(3)))
+    assert.ok(is(fn.run(), Success(4)))
   })
 
-  test("always(a).flatMap(f) works", () => {
+  it("always(a).flatMap(f) works", () => {
     const fa = Eval.always(() => 1).flatMap(a => Eval.always(() => a + 1))
-    expect(fa.get()).toBe(2)
+    assert.equal(fa.get(), 2)
   })
 
-  test("always(a).transformWith(f,g) works", () => {
+  it("always(a).transformWith(f,g) works", () => {
     const fa = Eval.always(() => 1).transformWith(
       err => Eval.raise(err),
       a => Eval.always(() => a + 1)
     )
-    expect(fa.get()).toBe(2)
+    assert.equal(fa.get(), 2)
   })
 
-  test("String(always(...))", () => {
-    expect(String(Eval.always(() => "value"))).toBe("Eval.always([thunk])")
+  it("String(always(...))", () => {
+    assert.equal(String(Eval.always(() => "value")), "Eval.always([thunk])")
   })
 
-  test("suspend() should suspend side effects", () => {
+  it("suspend() should suspend side effects", () => {
     let effect = 0
     const fn = Eval.suspend(() =>
       Eval.once(() => { effect += 1; return effect }))
 
-    expect(effect).toBe(0)
-    expect(fn.get()).toBe(1)
-    expect(fn.get()).toBe(2)
-    expect(is(fn.run(), Success(3))).toBe(true)
-    expect(is(fn.run(), Success(4))).toBe(true)
+    assert.equal(effect, 0)
+    assert.equal(fn.get(), 1)
+    assert.equal(fn.get(), 2)
+    assert.ok(is(fn.run(), Success(3)))
+    assert.ok(is(fn.run(), Success(4)))
   })
 
-  test("suspend(fa).flatMap(f) works", () => {
+  it("suspend(fa).flatMap(f) works", () => {
     const fa = Eval.suspend(() => Eval.always(() => 1))
       .flatMap(a => Eval.always(() => a + 1))
-    expect(fa.get()).toBe(2)
+    assert.equal(fa.get(), 2)
   })
 
-  test("suspend(fa).transformWith(f,g) works", () => {
+  it("suspend(fa).transformWith(f,g) works", () => {
     const fa = Eval.suspend(() => Eval.always(() => 1)).transformWith(
       Eval.raise,
       a => Eval.always(() => a + 1)
     )
-    expect(fa.get()).toBe(2)
+    assert.equal(fa.get(), 2)
   })
 
   jv.property("defer is an alias for suspend",
@@ -187,43 +189,44 @@ describe("Eval basic data constructors tests", () => {
     }
   )
 
-  test("String(suspend(...))", () => {
-    expect(String(Eval.suspend(() => Eval.now("value")))).toBe("Eval.suspend([thunk])")
+  it("String(suspend(...))", () => {
+    assert.equal(String(Eval.suspend(() => Eval.now("value"))), "Eval.suspend([thunk])")
   })
 
-  test("String(flatMap(...))", () => {
-    expect(String(Eval.now("value").flatMap(x => Eval.now(x))))
-      .toBe('Eval#FlatMap(Eval.now("value"), [function])')
+  it("String(flatMap(...))", () => {
+    assert.equal(
+      String(Eval.now("value").flatMap(x => Eval.now(x))),
+      'Eval#FlatMap(Eval.now("value"), [function])')
   })
 
-  test("Eval.of is alias for always for thunks", () => {
+  it("Eval.of is alias for always for thunks", () => {
     let effect = 0
     const fa = Eval.of(() => { effect += 1; return effect })
 
-    expect(fa.get()).toBe(1)
-    expect(fa.get()).toBe(2)
-    expect(fa.get()).toBe(3)
-    expect(fa.get()).toBe(4)
+    assert.equal(fa.get(), 1)
+    assert.equal(fa.get(), 2)
+    assert.equal(fa.get(), 3)
+    assert.equal(fa.get(), 4)
   })
 })
 
 describe("Eval error handling", () => {
-  test("attempt for success", () => {
-    expect(is(Eval.pure(10).attempt().get(), Right(10))).toBeTruthy()
+  it("attempt for success", () => {
+    assert.equal(Eval.pure(10).attempt().get(), Right(10))
   })
 
-  test("attempt for failure", () => {
+  it("attempt for failure", () => {
     const dummy = new DummyError("error")
-    expect(is(Eval.raise(dummy).attempt().get(), Left(dummy))).toBeTruthy()
+    assert.equal(Eval.raise(dummy).attempt().get(), Left(dummy))
   })
 
-  test("flatMap() protects against user error", () => {
+  it("flatMap() protects against user error", () => {
     const dummy = new DummyError("dummy")
     const r = Eval.now(1).flatMap(a => { throw dummy }).run()
-    expect(is(r, Failure(dummy))).toBe(true)
+    assert.ok(is(r, Failure(dummy)))
   })
 
-  test("flatMap() error can recover, test #1", () => {
+  it("flatMap() error can recover, test #1", () => {
     const dummy = new DummyError("dummy")
     const r = Eval.now(1)
       .flatMap<number>(a => { throw dummy })
@@ -231,10 +234,10 @@ describe("Eval error handling", () => {
       .flatMap(a => Eval.now(a + 1))
       .run()
 
-    expect(r.get()).toBe(101)
+    assert.equal(r.get(), 101)
   })
 
-  test("flatMap() error can recover, test #2", () => {
+  it("flatMap() error can recover, test #2", () => {
     const dummy = new DummyError("dummy")
     const r = Eval.now(1)
       .flatMap<number>(a => { throw dummy })
@@ -243,76 +246,76 @@ describe("Eval error handling", () => {
       .flatMap(a => Eval.now(a + 1))
       .run()
 
-    expect(r.get()).toBe(101)
+    assert.equal(r.get(), 101)
   })
 
-  test("always() protects against user code", () => {
+  it("always() protects against user code", () => {
     const dummy = new DummyError("dummy")
     const fa = Eval.always<number>(() => { throw dummy })
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
+    assert.ok(is(fa.run(), Failure(dummy)))
   })
 
-  test("always() can recover", () => {
+  it("always() can recover", () => {
     const dummy = new DummyError("dummy")
     const fa = Eval.always<number>(() => { throw dummy }).recover(_ => 100)
-    expect(is(fa.run(), Success(100))).toBe(true)
+    assert.ok(is(fa.run(), Success(100)))
   })
 
-  test("once() protects against user code", () => {
+  it("once() protects against user code", () => {
     let effect = 0
     const dummy = new DummyError("dummy")
     const fa = Eval.once<number>(() => { effect += 1; throw dummy })
 
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
-    expect(effect).toBe(1)
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
-    expect(effect).toBe(1)
+    assert.ok(is(fa.run(), Failure(dummy)))
+    assert.equal(effect, 1)
+    assert.ok(is(fa.run(), Failure(dummy)))
+    assert.equal(effect, 1)
   })
 
-  test("once() can recover", () => {
+  it("once() can recover", () => {
     const dummy = new DummyError("dummy")
     const fa = Eval.once<number>(() => { throw dummy }).recover(_ => 100)
-    expect(is(fa.run(), Success(100))).toBe(true)
+    assert.ok(is(fa.run(), Success(100)))
   })
 
-  test("suspend() protects against user code", () => {
+  it("suspend() protects against user code", () => {
     const dummy = new DummyError("dummy")
     const fa = Eval.suspend<number>(() => { throw dummy })
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
+    assert.ok(is(fa.run(), Failure(dummy)))
   })
 
-  test("suspend() can recover", () => {
+  it("suspend() can recover", () => {
     const dummy = new DummyError("dummy")
     const fa = Eval.suspend<number>(() => { throw dummy }).recover(_ => 100)
-    expect(is(fa.run(), Success(100))).toBe(true)
+    assert.ok(is(fa.run(), Success(100)))
   })
 
-  test("transform protects against user code on success", () => {
+  it("transform protects against user code on success", () => {
     const dummy = new DummyError("dummy")
     const fa = Eval.now(100).transform<number>(e => { throw e }, _ => { throw dummy })
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
+    assert.ok(is(fa.run(), Failure(dummy)))
   })
 
-  test("transform protects against user code on failure", () => {
+  it("transform protects against user code on failure", () => {
     const dummy1 = new DummyError("dummy1")
     const dummy2 = new DummyError("dummy2")
 
     const fa = Eval.raise(dummy1).transformWith<number>(_ => { throw dummy2 }, id)
-    expect(is(fa.run(), Failure(dummy2))).toBe(true)
+    assert.ok(is(fa.run(), Failure(dummy2)))
   })
 
-  test("transformWith protects against user code on success", () => {
+  it("transformWith protects against user code on success", () => {
     const dummy = new DummyError("dummy")
     const fa = Eval.now(100).transformWith<number>(Eval.raise, _ => { throw dummy })
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
+    assert.ok(is(fa.run(), Failure(dummy)))
   })
 
-  test("transformWith protects against user code on failure", () => {
+  it("transformWith protects against user code on failure", () => {
     const dummy1 = new DummyError("dummy1")
     const dummy2 = new DummyError("dummy2")
 
     const fa = Eval.raise(dummy1).transformWith<number>(_ => { throw dummy2 }, Eval.now)
-    expect(is(fa.run(), Failure(dummy2))).toBe(true)
+    assert.ok(is(fa.run(), Failure(dummy2)))
   })
 
   jv.property("getOrElse() mirrors the source on success",
@@ -322,9 +325,9 @@ describe("Eval error handling", () => {
       return is(ref.getOrElse(10000), ref.get())
     })
 
-  test("getOrElse() returns the fallback on failure", () => {
+  it("getOrElse() returns the fallback on failure", () => {
     const fa: Eval<number> = Eval.raise("error")
-    expect(fa.getOrElse(100)).toBe(100)
+    assert.equal(fa.getOrElse(100), 100)
   })
 
   jv.property("getOrElseL() mirrors the source on success",
@@ -334,9 +337,9 @@ describe("Eval error handling", () => {
       return is(ref.getOrElseL(() => 10000), ref.get())
     })
 
-  test("getOrElseL() returns the fallback on failure", () => {
+  it("getOrElseL() returns the fallback on failure", () => {
     const fa: Eval<number> = Eval.raise("error")
-    expect(fa.getOrElseL(() => 100)).toBe(100)
+    assert.equal(fa.getOrElseL(() => 100), 100)
   })
 })
 
@@ -361,14 +364,14 @@ describe("Eval is a monad", () => {
     (fa, f) => is(fa.flatMap(f).run(), fa.chain(f).run())
   )
 
-  test("flatMap is tail safe", () => {
+  it("flatMap is tail safe", () => {
     function loop(n: number, ref: Eval<number>): Eval<number> {
       return n <= 0 ? ref :
         ref.flatMap(a => loop(n - 1, Eval.now(a + 1)))
     }
 
     const n = 50000
-    expect(loop(n, Eval.now(0)).get()).toBe(n)
+    assert.equal(loop(n, Eval.now(0)).get(), n)
   })
 
   jv.property("pure(n).map(f) === pure(f(n))",
@@ -386,19 +389,19 @@ describe("Eval is a monad", () => {
     (fa, f, g) => is(fa.map(f).map(g).run(), fa.map(x => g(f(x))).run())
   )
 
-  test("map is tail safe", () => {
+  it("map is tail safe", () => {
     let n = 10000
     let fa = Eval.now(0)
     for (let i = 0; i < n; i++) fa = fa.map(_ => _ + 1)
-    expect(fa.get()).toBe(n)
+    assert.equal(fa.get(), n)
   })
 
-  test("unit", () => {
+  it("unit", () => {
     const e1 = Eval.unit()
     const e2 = Eval.unit()
 
-    expect(e1).toBe(e2)
-    expect(e1.run().get()).toBeUndefined()
+    assert.equal(e1, e2)
+    assert.equal(e1.run().get(), undefined)
   })
 })
 
@@ -413,107 +416,107 @@ describe("Eval memoization", () => {
     fa => is(fa.memoizeOnSuccess().run(), fa.run())
   )
 
-  test("now, raise and once returns the same reference on .memoize", () => {
+  it("now, raise and once returns the same reference on .memoize", () => {
     const fa1 = Eval.now(1)
-    expect(fa1.memoize()).toBe(fa1)
+    assert.equal(fa1.memoize(), fa1)
   })
 
-  test("always().memoize caches successful results", () => {
+  it("always().memoize caches successful results", () => {
     let effect = 0
     const source = Eval.always(() => { effect += 1; return effect })
     const fa = source.memoize()
 
-    expect(fa.get()).toBe(1)
-    expect(fa.get()).toBe(1)
-    expect(fa.get()).toBe(1)
+    assert.equal(fa.get(), 1)
+    assert.equal(fa.get(), 1)
+    assert.equal(fa.get(), 1)
   })
 
-  test("always().memoize caches failures", () => {
+  it("always().memoize caches failures", () => {
     const dummy = new DummyError("dummy")
     let effect = 0
     const source = Eval.always(() => { effect += 1; throw dummy })
     const fa = source.memoize()
 
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
-    expect(effect).toBe(1)
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
-    expect(effect).toBe(1)
+    assert.ok(is(fa.run(), Failure(dummy)))
+    assert.equal(effect, 1)
+    assert.ok(is(fa.run(), Failure(dummy)))
+    assert.equal(effect, 1)
   })
 
-  test("any.flatMap.memoize caches successful results", () => {
+  it("any.flatMap.memoize caches successful results", () => {
     let effect = 0
     const source = Eval.now(1).map(x => { effect += x; return effect })
     const fa = source.memoize()
 
-    expect(fa.get()).toBe(1)
-    expect(fa.get()).toBe(1)
-    expect(fa.get()).toBe(1)
+    assert.equal(fa.get(), 1)
+    assert.equal(fa.get(), 1)
+    assert.equal(fa.get(), 1)
   })
 
-  test("any.flatMap.memoize caches failures", () => {
+  it("any.flatMap.memoize caches failures", () => {
     const dummy = new DummyError("dummy")
     let effect = 0
     const source = Eval.now(1).flatMap(x => { effect += x; throw dummy })
     const fa = source.memoize()
 
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
-    expect(effect).toBe(1)
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
-    expect(effect).toBe(1)
+    assert.ok(is(fa.run(), Failure(dummy)))
+    assert.equal(effect, 1)
+    assert.ok(is(fa.run(), Failure(dummy)))
+    assert.equal(effect, 1)
   })
 
   // ---
-  test("now, raise and once returns the same reference on .memoizeOnSuccess", () => {
+  it("now, raise and once returns the same reference on .memoizeOnSuccess", () => {
     const fa1 = Eval.now(1)
-    expect(fa1.memoizeOnSuccess()).toBe(fa1)
+    assert.equal(fa1.memoizeOnSuccess(), fa1)
   })
 
-  test("always().memoizeOnSuccess caches successful results", () => {
+  it("always().memoizeOnSuccess caches successful results", () => {
     let effect = 0
     const source = Eval.always(() => { effect += 1; return effect })
     const fa = source.memoizeOnSuccess()
 
-    expect(fa.get()).toBe(1)
-    expect(fa.get()).toBe(1)
-    expect(fa.get()).toBe(1)
+    assert.equal(fa.get(), 1)
+    assert.equal(fa.get(), 1)
+    assert.equal(fa.get(), 1)
   })
 
-  test("always().memoizeOnSuccess does not cache failures", () => {
+  it("always().memoizeOnSuccess does not cache failures", () => {
     const dummy = new DummyError("dummy")
     let effect = 0
     const source = Eval.always(() => { effect += 1; throw dummy })
     const fa = source.memoizeOnSuccess()
 
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
-    expect(effect).toBe(1)
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
-    expect(effect).toBe(2)
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
-    expect(effect).toBe(3)
+    assert.ok(is(fa.run(), Failure(dummy)))
+    assert.equal(effect, 1)
+    assert.ok(is(fa.run(), Failure(dummy)))
+    assert.equal(effect, 2)
+    assert.ok(is(fa.run(), Failure(dummy)))
+    assert.equal(effect, 3)
   })
 
-  test("any.flatMap.memoizeOnSuccess caches successful results", () => {
+  it("any.flatMap.memoizeOnSuccess caches successful results", () => {
     let effect = 0
     const source = Eval.now(1).map(x => { effect += x; return effect })
     const fa = source.memoizeOnSuccess()
 
-    expect(fa.get()).toBe(1)
-    expect(fa.get()).toBe(1)
-    expect(fa.get()).toBe(1)
+    assert.equal(fa.get(), 1)
+    assert.equal(fa.get(), 1)
+    assert.equal(fa.get(), 1)
   })
 
-  test("any.flatMap.memoizeOnSuccess caches failures", () => {
+  it("any.flatMap.memoizeOnSuccess caches failures", () => {
     const dummy = new DummyError("dummy")
     let effect = 0
     const source = Eval.now(1).flatMap(x => { effect += x; throw dummy })
     const fa = source.memoizeOnSuccess()
 
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
-    expect(effect).toBe(1)
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
-    expect(effect).toBe(2)
-    expect(is(fa.run(), Failure(dummy))).toBe(true)
-    expect(effect).toBe(3)
+    assert.ok(is(fa.run(), Failure(dummy)))
+    assert.equal(effect, 1)
+    assert.ok(is(fa.run(), Failure(dummy)))
+    assert.equal(effect, 2)
+    assert.ok(is(fa.run(), Failure(dummy)))
+    assert.equal(effect, 3)
   })
 })
 
@@ -528,27 +531,27 @@ describe("Eval.foreach and foreachL", () => {
     }
   )
 
-  test("forEach throws exception for failures", () => {
+  it("forEach throws exception for failures", () => {
     const fa: Eval<number> = Eval.raise("dummy")
-    expect(() => fa.forEach(a => {})).toThrowError("dummy")
+    assert.throws(() => fa.forEach(a => {}))
   })
 })
 
 describe("Eval.tailRecM", () => {
   it("is stack safe", () => {
     const fa = Eval.tailRecM(0, a => Eval.now(a < 1000 ? Left(a + 1) : Right(a)))
-    expect(fa.get()).toBe(1000)
+    assert.equal(fa.get(), 1000)
   })
 
   it("returns the failure unchanged", () => {
     const fa = Eval.tailRecM(0, a => Eval.raise("failure"))
-    expect(fa.run().failed().get()).toBe("failure")
+    assert.equal(fa.run().failed().get(), "failure")
   })
 
   it("protects against user errors", () => {
     // tslint:disable:no-string-throw
     const fa = Eval.tailRecM(0, a => { throw "dummy" })
-    expect(fa.run().failed().get()).toBe("dummy")
+    assert.equal(fa.run().failed().get(), "dummy")
   })
 })
 

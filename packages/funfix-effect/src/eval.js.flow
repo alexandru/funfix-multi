@@ -17,6 +17,7 @@
 
 /* @flow */
 
+import type { Throwable } from "funfix-core"
 import { Try, Either } from "funfix-core"
 
 declare export class Eval<+A> {
@@ -29,12 +30,12 @@ declare export class Eval<+A> {
   map<B>(f: (a: A) => B): Eval<B>;
   flatMap<B>(f: (a: A) => Eval<B>): Eval<B>;
   chain<B>(f: (a: A) => Eval<B>): Eval<B>;
-  transform<R>(failure: (e: any) => R, success: (a: A) => R): Eval<R>;
-  transformWith<R>(failure: (e: any) => Eval<R>, success: (a: A) => Eval<R>): Eval<R>;
+  transform<R>(failure: (e: Throwable) => R, success: (a: A) => R): Eval<R>;
+  transformWith<R>(failure: (e: Throwable) => Eval<R>, success: (a: A) => Eval<R>): Eval<R>;
 
-  recover<AA>(f: (e: any) => AA): Eval<A | AA>;
-  recoverWith<AA>(f: (e: any) => Eval<AA>): Eval<A | AA>;
-  attempt(): Eval<Either<any, A>>;
+  recover<AA>(f: (e: Throwable) => AA): Eval<A | AA>;
+  recoverWith<AA>(f: (e: Throwable) => Eval<AA>): Eval<A | AA>;
+  attempt(): Eval<Either<Throwable, A>>;
 
   memoize(): Eval<A>;
   memoizeOnSuccess(): Eval<A>;
@@ -52,7 +53,7 @@ declare export class Eval<+A> {
   static pure<A>(value: A): Eval<A>;
   static now<A>(value: A): Eval<A>;
   static unit(): Eval<void>;
-  static raise<A>(e: any): Eval<A>;
+  static raise<A>(e: Throwable): Eval<A>;
   static always<A>(thunk: () => A): Eval<A>;
   static once<A>(thunk: () => A): Eval<A>;
   static suspend<A>(thunk: () => Eval<A>): Eval<A>;

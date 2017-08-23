@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import { Try, Either, IllegalStateError } from "funfix-core"
+import { Try, Either, IllegalStateError, Throwable } from "funfix-core"
 
 /**
  * Eval is a monad which controls evaluation.
@@ -197,7 +197,7 @@ export class Eval<A> {
    * @param success is a function for transforming a successful result
    * @param failure is function for transforming failures
    */
-  transform<R>(failure: (e: any) => R, success: (a: A) => R): Eval<R> {
+  transform<R>(failure: (e: Throwable) => R, success: (a: A) => R): Eval<R> {
     return this.transformWith(
       e => Eval.now(failure(e)),
       a => Eval.now(success(a))
@@ -216,7 +216,7 @@ export class Eval<A> {
    * @param success is a function for transforming a successful result
    * @param failure is function for transforming failures
    */
-  transformWith<R>(failure: (e: any) => Eval<R>, success: (a: A) => Eval<R>): Eval<R> {
+  transformWith<R>(failure: (e: Throwable) => Eval<R>, success: (a: A) => Eval<R>): Eval<R> {
     const f: any = (a: A) => success(a)
     f.onFailure = failure
     return new FlatMap(this, f) as any
@@ -230,7 +230,7 @@ export class Eval<A> {
    * This function is the equivalent of a `try/catch` statement,
    * or the equivalent of {@link Eval.map .map} for errors.
    */
-  recover<AA>(f: (e: any) => AA): Eval<A | AA> {
+  recover<AA>(f: (e: Throwable) => AA): Eval<A | AA> {
     return this.recoverWith(a => Eval.now(f(a)))
   }
 
@@ -242,7 +242,7 @@ export class Eval<A> {
    * This function is the equivalent of a `try/catch` statement,
    * or the equivalent of {@link Eval.flatMap .flatMap} for errors.
    */
-  recoverWith<AA>(f: (e: any) => Eval<AA>): Eval<A | AA> {
+  recoverWith<AA>(f: (e: Throwable) => Eval<AA>): Eval<A | AA> {
     return this.transformWith(f, Eval.now as any)
   }
 
@@ -252,9 +252,9 @@ export class Eval<A> {
    * If there is no error, then a `Right` value will be returned instead.
    * Errors can be handled by this method.
    */
-  attempt(): Eval<Either<any, A>> {
+  attempt(): Eval<Either<Throwable, A>> {
     return this.transform(
-      _ => Either.left<any, A>(_),
+      _ => Either.left<Throwable, A>(_),
       Either.right)
   }
 
@@ -362,7 +362,7 @@ export class Eval<A> {
    * Returns an `Eval` that on execution is always finishing in error
    * emitting the specified exception.
    */
-  static raise(e: any): Eval<never> { return new Raise(e) }
+  static raise(e: Throwable): Eval<never> { return new Raise(e) }
 
   /**
    * Promote a `thunk` function to an `Eval`, catching exceptions in
@@ -468,7 +468,7 @@ class Raise extends Eval<never> {
    * @param error is the error value that's going to be
    * throw when `get()` is called.
    */
-  constructor(public error: any) { super() }
+  constructor(public error: Throwable) { super() }
 
   get(): never { throw this.error }
   run(): Try<never> { return Try.failure<never>(this.error) }
