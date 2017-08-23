@@ -21,6 +21,7 @@
 import * as ff from "../../src/"
 
 // Testing a la carte import
+import type { Throwable } from "../../src/"
 import {
   CompositeError,
   DummyError,
@@ -112,3 +113,7 @@ new TimeoutError()
 new TimeoutError("message")
 // $ExpectError
 new TimeoutError(1)
+
+// --
+const th1: Throwable = new TimeoutError()
+const th2: Throwable = "string error"
